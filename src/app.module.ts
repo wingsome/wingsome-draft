@@ -1,17 +1,13 @@
 import { Module } from '@nestjs/common';
-import { GatewayModule } from './gateway/gateway.module';
-import { AuthModule } from './auth/auth.module';
-import { LoginModule } from './login/login.module';
 import { UserModule } from './user/user.module';
-import { RelationModule } from './relation/relation.module';
-import { MatchModule } from './match/match.module';
-import { NotificationModule } from './notification/notification.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
-import { User } from './login/entity/user.entity';
-import { ProfileUser } from './user/entity/profile-user.entity';
-import { ProfileWingker } from './user/entity/profile-wingker.entity';
+import { User } from './user/entity/user.entity';
+import { ProfileUser } from './profile/entity/profile-user.entity';
+import { ProfileWingker } from './profile/entity/profile-wingker.entity';
+import { ProfileModule } from './profile/profile.module';
+import { ProfileWingkerImage } from './profile/entity/profile-wingker-image.entity';
 
 @Module({
   imports: [
@@ -35,12 +31,17 @@ import { ProfileWingker } from './user/entity/profile-wingker.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [User, ProfileUser, ProfileWingker],
+        entities: [
+          User,
+          ProfileUser,
+          ProfileWingker,
+          ProfileWingkerImage
+        ],
         synchronize: true // local only!!
       }),
       inject: [ConfigService]
     }),
-    GatewayModule, AuthModule, LoginModule, UserModule, RelationModule, MatchModule, NotificationModule
+    UserModule, ProfileModule
   ]
 })
 export class AppModule {}

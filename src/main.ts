@@ -6,28 +6,21 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,            // DTO에 없는 필드는 자동 제거
+    forbidNonWhitelisted: true  // 허용되지 않은 필드 있으면 에러
+  }));
+
   // Swagger 설정 객체
   const config = new DocumentBuilder()
-    .setTitle('Wingsome API Docs')
-    .setDescription('Wingsome 서비스의 REST API 명세서')
+    .setTitle('Wingsome API')
+    .setDescription('Wingsome API 명세서')
     .setVersion('1.0.0')
     .addBearerAuth() // JWT 인증 헤더 추가
     .build();
-
-  // Swagger 문서
   const document = SwaggerModule.createDocument(app, config);
-
-  // Swagger UI 엔드포인트 등록
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true, // Swagger UI에서 인증정보 유지
-    },
-  });
-
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true
-  }));
+  SwaggerModule.setup('api', app, document);
+  
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
