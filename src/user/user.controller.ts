@@ -1,13 +1,18 @@
-import { BadRequestException, Body, Controller, Delete, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
-import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Param, ParseIntPipe, Patch, Post, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { SixDigitPasswordPipe } from '../common/pipe/six-digit-password.pipe';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UserService } from './user.service';
+import { ApiDomain, HateoasHelper, HttpMethod, LinkMap } from 'src/common/hateoas/hateoas.helper';
 
 @ApiTags('User')
 @Controller('user')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly hateoasHelper: HateoasHelper
+  ) {}
 
   @Post()
   @ApiOperation({ summary: '회원 가입', description: '신규 계정을 생성하거나, 탈퇴 계정을 복구합니다.' })
@@ -17,20 +22,37 @@ export class UserController {
   async createUser(
     @Body() request: CreateUserDto
   ) {
-    return this.userService.createUser(request);
+    const result = await this.userService.createUser(request);
+
+    const id = result.id;
+    const links: LinkMap = this.hateoasHelper.createLinks(ApiDomain.LOCAL, id, [
+      { name: 'self_user', endpoint: 'user', method: HttpMethod.GET },
+      { name: 'update_user', endpoint: 'user', method: HttpMethod.PUT },
+      { name: 'self_winker', endpoint: 'winker', method: HttpMethod.GET },
+      { name: 'update_winker', endpoint: 'winker', method: HttpMethod.PUT },
+      { name: 'update_winker_active', endpoint: 'winker', method: HttpMethod.PATCH },
+    ]);
+
+    return { data: result, _links: links };
   }
 
   @Patch('/:id')
   @ApiOperation({ summary: '비밀번호 변경', description: '기존 회원의 비밀번호를 변경합니다.' })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
+  @ApiBody({ schema: {
+    properties: {
+      newPassword: { type: 'string', description: '새 비밀번호', nullable: false }
+    },
+    required: ['newPassword']
+  } })
   @ApiResponse({ status: 200, description: '변경 성공' })
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async updatePassword(
     @Param('id', ParseIntPipe) id: number,
-    @Body() request: UpdatePasswordDto,
+    @Body('newPassword', SixDigitPasswordPipe ) newPassword: string
   ) {
-    return this.userService.updatePassword(id, request.newPassword);
+    return this.userService.updatePassword(id, newPassword);
   }
 
   @Delete('/:id')
@@ -43,14 +65,13 @@ export class UserController {
     required: ['password']
   } })
   @ApiResponse({ status: 200, description: '삭제 성공' })
-  @ApiResponse({ status: 400, description: '필수 값 누락' })
+  @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
   @ApiResponse({ status: 401, description: '비밀번호 인증 실패' })
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async deleteUser(
     @Param('id', ParseIntPipe) id: number,
-    @Body('password') password: string,
+    @Body('password', SixDigitPasswordPipe ) password: string
   ) {
-    if (!password)  throw new BadRequestException('Password is required.');
     return this.userService.deleteUser(id, password);
   }
 }

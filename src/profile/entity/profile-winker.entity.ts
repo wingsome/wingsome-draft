@@ -1,12 +1,15 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { MBTI, Smoke, Tattoo } from "../enum/profile.enum";
-import { ProfileWingkerImage } from "./profile-wingker-image.entity";
+import { ProfileWinkerImage } from "./profile-winker-image.entity";
+import { Exclude } from "class-transformer";
 
-@Entity('profile_wingker', { comment: '윙커 프로필 정보' })
-export class ProfileWingker {
+@Entity('profile_winker', { comment: '윙커 프로필 정보' })
+export class ProfileWinker {
+  @Exclude()
   @PrimaryGeneratedColumn({ comment: '윙커 프로필 ID' })
   id: number;
 
+  @Exclude()
   @Column({ name: 'user_id', type: 'int', unique: true, comment: '회원 ID' })
   userId: number;
 
@@ -38,9 +41,9 @@ export class ProfileWingker {
   isActive: boolean;
 
   @OneToMany(
-    () => ProfileWingkerImage,
-    (profileWingkerImage) => profileWingkerImage.profileWingker,
-    { cascade: ['insert'], eager: true }
+    () => ProfileWinkerImage,
+    (profileWingkerImage) => profileWinkerImage.profileWinker,
+    { cascade: ['insert'] }
   )
-  images: ProfileWingkerImage[];
+  images: ProfileWinkerImage[];
 }

@@ -1,11 +1,14 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { Gender } from "../enum/profile.enum";
+import { Exclude } from "class-transformer";
 
 @Entity('profile_user', { comment: '회원 기본 프로필 정보' })
 export class ProfileUser {
+  @Exclude()
   @PrimaryGeneratedColumn({ comment: '프로필 ID' })
   id: number;
 
+  @Exclude()
   @Column({ name: 'user_id', type: 'int', unique: true, comment: '회원 ID' })
   userId: number;
 

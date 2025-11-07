@@ -1,19 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProfileUser } from './entity/profile-user.entity';
-import { Repository } from 'typeorm';
-import { UpdateProfileUserDto } from './dto/update-profile-user.dto';
 import { User } from 'src/user/entity/user.entity';
-import { ProfileWingker } from './entity/profile-wingker.entity';
-import { UpdateProfileWingkerDto } from './dto/update-profile-wingker.dto';
-import { ProfileWingkerImage } from './entity/profile-wingker-image.entity';
+import { Repository } from 'typeorm';
+import { Transactional } from 'typeorm-transactional';
+import { UpdateProfileUserDto } from './dto/update-profile-user.dto';
+import { UpdateProfileWinkerDto } from './dto/update-profile-winker.dto';
+import { ProfileUser } from './entity/profile-user.entity';
+import { ProfileWinkerImage } from './entity/profile-winker-image.entity';
+import { ProfileWinker } from './entity/profile-winker.entity';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @InjectRepository(ProfileUser) private readonly profileUserRepository: Repository<ProfileUser>,
-    @InjectRepository(ProfileWingker) private readonly profileWingkerRepository: Repository<ProfileWingker>,
-    @InjectRepository(ProfileWingkerImage) private readonly profileWingkerImageRepository: Repository<ProfileWingkerImage>,
+    @InjectRepository(ProfileWinker) private readonly profileWinkerRepository: Repository<ProfileWinker>,
+    @InjectRepository(ProfileWinkerImage) private readonly profileWinkerImageRepository: Repository<ProfileWinkerImage>,
     @InjectRepository(User) private readonly userRepository: Repository<User>
   ) {}
 
@@ -28,49 +29,47 @@ export class ProfileService {
   }
   
   async getProfileUser(userId: number): Promise<ProfileUser> {
-    const profile = await this.profileUserRepository.findOne({
-      where: { userId },
-      select: ['name', 'birthYear', 'gender', 'profileImageUrl', 'bio']
-    });
+    const profile = await this.profileUserRepository.findOne({ where: { userId } });
     if (!profile) throw new NotFoundException('User profile not found.');
     return profile;
   }
 
-  async updateProfileWingker(userId: number, request: UpdateProfileWingkerDto): Promise<ProfileWingker> {
+  @Transactional()
+  async updateProfileWingker(userId: number, request: UpdateProfileWinkerDto): Promise<ProfileWinker> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found.');
 
-    let profile = await this.profileWingkerRepository.findOne({ where: { userId } });
+    let profile = await this.profileWinkerRepository.findOne({ where: { userId } });
     if (profile) {
       Object.assign(profile, request);
       // 기존 이미지 삭제 후 신규 저장
-      await this.profileWingkerImageRepository.delete({ profileWingkerId: profile.id });
+      await this.profileWinkerImageRepository.delete({ profileWinkerId: profile.id });
       profile.images = request.images.map((img) =>
-        this.profileWingkerImageRepository.create({ ...img }),
+        this.profileWinkerImageRepository.create({ ...img }),
       );
     } else {
-      profile = this.profileWingkerRepository.create({
+      profile = this.profileWinkerRepository.create({
         userId,
         ...request,
         images: request.images.map((img) =>
-          this.profileWingkerImageRepository.create({ ...img })
+          this.profileWinkerImageRepository.create({ ...img })
         ),
       });
     }
 
-    return await this.profileWingkerRepository.save(profile);
+    return await this.profileWinkerRepository.save(profile);
   }
   
-  async updateActive(userId: number, active: boolean): Promise<ProfileWingker> {
-    const profile = await this.profileWingkerRepository.findOne({ where: { userId } });
-    if (!profile) throw new NotFoundException('Wingker profile not found.');
+  async updateActive(userId: number, active: boolean): Promise<ProfileWinker> {
+    const profile = await this.profileWinkerRepository.findOne({ where: { userId }, relations: ['images'] });
+    if (!profile) throw new NotFoundException('Winker profile not found.');
     profile.isActive = active;
-    return await this.profileWingkerRepository.save(profile);
+    return await this.profileWinkerRepository.save(profile);
   }
 
-  async getProfileWingker(userId: number): Promise<ProfileWingker> {
-    const profile = await this.profileWingkerRepository.findOne({ where: { userId } });
-    if (!profile) throw new NotFoundException('Wingker profile not found.');
+  async getProfileWingker(userId: number): Promise<ProfileWinker> {
+    const profile = await this.profileWinkerRepository.findOne({ where: { userId }, relations: ['images'] });
+    if (!profile) throw new NotFoundException('Winker profile not found.');
     return profile;
   }
 }

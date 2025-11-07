@@ -5,9 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { User } from './user/entity/user.entity';
 import { ProfileUser } from './profile/entity/profile-user.entity';
-import { ProfileWingker } from './profile/entity/profile-wingker.entity';
+import { ProfileWingker } from './profile/entity/profile-winker.entity';
 import { ProfileModule } from './profile/profile.module';
-import { ProfileWingkerImage } from './profile/entity/profile-wingker-image.entity';
+import { ProfileWingkerImage } from './profile/entity/profile-winker-image.entity';
+import { DataSource } from 'typeorm';
+import { addTransactionalDataSource } from 'typeorm-transactional';
 
 @Module({
   imports: [
@@ -39,7 +41,11 @@ import { ProfileWingkerImage } from './profile/entity/profile-wingker-image.enti
         ],
         synchronize: true // local only!!
       }),
-      inject: [ConfigService]
+      inject: [ConfigService],
+      async dataSourceFactory(option) {
+        if (!option) throw new Error('Invalid options passed');
+        return addTransactionalDataSource(new DataSource(option));
+      }
     }),
     UserModule, ProfileModule
   ]

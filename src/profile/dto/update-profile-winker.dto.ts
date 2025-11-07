@@ -3,7 +3,7 @@ import { ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString
 import { MBTI, Smoke, Tattoo } from "../enum/profile.enum";
 import { Type } from "class-transformer";
 
-export class UpdateProfileWingkerDto {
+export class UpdateProfileWinkerDto {
   @ApiProperty({ description: '지역(시)', required: true, nullable: false })
   @IsNotEmpty()
   @IsString()
