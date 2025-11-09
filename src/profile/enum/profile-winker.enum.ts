@@ -1,8 +1,3 @@
-export enum Gender{
-  M = 'M',
-  F = 'F'
-}
-
 export enum MBTI {
   ISTJ = 'ISTJ',
   ISTP = 'ISTP',

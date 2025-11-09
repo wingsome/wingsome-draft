@@ -3,7 +3,8 @@ import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/s
 import { SixDigitPasswordPipe } from '../common/pipe/six-digit-password.pipe';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from './user.service';
-import { ApiDomain, HateoasHelper, HttpMethod, LinkMap } from 'src/common/hateoas/hateoas.helper';
+import { LinkMap, HateoasHelper } from 'src/common/hateoas/hateoas.helper';
+import { ApiDomain, HttpMethod } from 'src/common/enum/hateoas.enum';
 
 @ApiTags('User')
 @Controller('user')
@@ -15,7 +16,10 @@ export class UserController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: '회원 가입', description: '신규 계정을 생성하거나, 탈퇴 계정을 복구합니다.' })
+  @ApiOperation({
+    summary: '회원 가입',
+    description: '신규 계정을 생성하거나, 탈퇴 계정을 복구합니다.'
+  })
   @ApiResponse({ status: 201, description: '생성 성공' })
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
   @ApiResponse({ status: 409, description: '이미 등록 혹은 삭제된 계정(연락처)' })
@@ -25,19 +29,22 @@ export class UserController {
     const result = await this.userService.createUser(request);
 
     const id = result.id;
-    const links: LinkMap = this.hateoasHelper.createLinks(ApiDomain.LOCAL, id, [
-      { name: 'self_user', endpoint: 'user', method: HttpMethod.GET },
-      { name: 'update_user', endpoint: 'user', method: HttpMethod.PUT },
-      { name: 'self_winker', endpoint: 'winker', method: HttpMethod.GET },
-      { name: 'update_winker', endpoint: 'winker', method: HttpMethod.PUT },
-      { name: 'update_winker_active', endpoint: 'winker', method: HttpMethod.PATCH },
+    const links: LinkMap = this.hateoasHelper.createLinks([
+      { name: 'self_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.GET },
+      { name: 'update_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.PUT },
+      { name: 'self_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.GET },
+      { name: 'update_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.PUT },
+      { name: 'update_winker_active', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.PATCH }
     ]);
 
     return { data: result, _links: links };
   }
 
   @Patch('/:id')
-  @ApiOperation({ summary: '비밀번호 변경', description: '기존 회원의 비밀번호를 변경합니다.' })
+  @ApiOperation({
+    summary: '비밀번호 변경',
+    description: '기존 회원의 비밀번호를 변경합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiBody({ schema: {
     properties: {
@@ -56,7 +63,10 @@ export class UserController {
   }
 
   @Delete('/:id')
-  @ApiOperation({ summary: '회원 탈퇴', description: '비밀번호를 검증 후 계정을 삭제합니다.' })
+  @ApiOperation({
+    summary: '회원 탈퇴',
+    description: '비밀번호 검증 후 계정을 삭제합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiBody({ schema: {
     properties: {

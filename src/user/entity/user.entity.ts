@@ -1,4 +1,5 @@
 import { Exclude } from "class-transformer";
+import { Grade, Role } from "src/common/enum/user-grade-role.enum";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('user', { comment: '회원 계정 정보' })
@@ -14,6 +15,12 @@ export class User {
 
   @Column({ name: 'pwd_hash', type: 'char', length: 60, comment: '비밀번호' })
   pwdHash: string;
+
+  @Column({ name: 'grade', type: 'enum', enum: Grade, enumName: 'user_grade_enum', default: Grade.BASIC, comment: '등급' })
+  grade: Grade;
+
+  @Column({ name: 'role', type: 'enum', enum: Role, enumName: 'user_role_enum', default: Role.USER, comment: '권한' })
+  role: Role;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: '생성 시각' })
   createdAt: Date;

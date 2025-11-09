@@ -7,6 +7,8 @@ import { User } from './entity/user.entity';
 
 @Injectable()
 export class UserService {
+  private readonly HASH_ROUND = 10;
+
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>
   ) {}
@@ -27,7 +29,7 @@ export class UserService {
     
     // 둘 다 존재하지 않음: 신규 생성
     if (!latestDeletedUser) {
-      const pwdHash = await bcrypt.hash(password, 10);
+      const pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
       const user = this.userRepository.create({ region, phone, pwdHash });
       const saved = await this.userRepository.save(user);
       return { id: saved.id };
@@ -38,12 +40,12 @@ export class UserService {
       if (recover === true) {
         // 최근 삭제 계정 복구
         latestDeletedUser.deletedAt = null;
-        latestDeletedUser.pwdHash = await bcrypt.hash(password, 10);
+        latestDeletedUser.pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
         const recovered = await this.userRepository.save(latestDeletedUser);
         return { id: recovered.id };
       } else if (recover === false) {
         // 재가입
-        const pwdHash = await bcrypt.hash(password, 10);
+        const pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
         const latestDeletedUser = this.userRepository.create({ region, phone, pwdHash });
         const saved = await this.userRepository.save(latestDeletedUser);
         return { id: saved.id };
@@ -57,7 +59,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found.');
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, this.HASH_ROUND);
     user.pwdHash = newHash;
 
     await this.userRepository.save(user);

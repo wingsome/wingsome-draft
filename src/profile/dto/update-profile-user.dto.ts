@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min } from "class-validator";
-import { Gender } from "../enum/profile.enum";
+import { Gender } from "../enum/profile-user.enum";
 
 export class UpdateProfileUserDto {
   @ApiProperty({ description: '회원명', required: true, nullable: false })

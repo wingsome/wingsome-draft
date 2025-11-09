@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { MBTI, Smoke, Tattoo } from "../enum/profile.enum";
+import { MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { ProfileWinkerImage } from "./profile-winker-image.entity";
 import { Exclude } from "class-transformer";
 
@@ -42,7 +42,7 @@ export class ProfileWinker {
 
   @OneToMany(
     () => ProfileWinkerImage,
-    (profileWingkerImage) => profileWinkerImage.profileWinker,
+    (profileWinkerImage) => profileWinkerImage.profileWinker,
     { cascade: ['insert'] }
   )
   images: ProfileWinkerImage[];

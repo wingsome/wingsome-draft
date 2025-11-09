@@ -35,7 +35,7 @@ export class ProfileService {
   }
 
   @Transactional()
-  async updateProfileWingker(userId: number, request: UpdateProfileWinkerDto): Promise<ProfileWinker> {
+  async updateProfileWinker(userId: number, request: UpdateProfileWinkerDto): Promise<ProfileWinker> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found.');
 
@@ -67,7 +67,7 @@ export class ProfileService {
     return await this.profileWinkerRepository.save(profile);
   }
 
-  async getProfileWingker(userId: number): Promise<ProfileWinker> {
+  async getProfileWinker(userId: number): Promise<ProfileWinker> {
     const profile = await this.profileWinkerRepository.findOne({ where: { userId }, relations: ['images'] });
     if (!profile) throw new NotFoundException('Winker profile not found.');
     return profile;

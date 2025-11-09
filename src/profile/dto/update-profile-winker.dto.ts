@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min, ValidateNested } from "class-validator";
-import { MBTI, Smoke, Tattoo } from "../enum/profile.enum";
+import { MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { Type } from "class-transformer";
 
 export class UpdateProfileWinkerDto {

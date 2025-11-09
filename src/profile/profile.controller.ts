@@ -12,7 +12,10 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Put('/user/:id')
-  @ApiOperation({ summary: '기본 프로필 생성 및 수정', description: '회원의 기본 프로필을 생성 및 수정합니다.' })
+  @ApiOperation({
+    summary: '기본 프로필 생성 및 수정',
+    description: '회원의 기본 프로필을 생성 및 수정합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiResponse({ status: 200, description: '생성 및 수정 성공' })
   @ApiResponse({ status: 400, description: '유효성 오류' })
@@ -25,7 +28,10 @@ export class ProfileController {
   }
 
   @Get('/user/:id')
-  @ApiOperation({ summary: '기본 프로필 조회', description: '회원의 기본 프로필을 조회합니다.' })
+  @ApiOperation({
+    summary: '기본 프로필 조회',
+    description: '회원의 기본 프로필을 조회합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiResponse({ status: 200, description: '조회 성공' })
   @ApiResponse({ status: 400, description: '유효성 오류' })
@@ -37,7 +43,10 @@ export class ProfileController {
   }
 
   @Put('/winker/:id')
-  @ApiOperation({ summary: '윙커 프로필 생성 및 수정', description: '회원의 윙커 프로필을 생성 및 수정합니다.' })
+  @ApiOperation({
+    summary: '윙커 프로필 생성 및 수정',
+    description: '회원의 윙커 프로필을 생성 및 수정합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiResponse({ status: 200, description: '생성 및 수정 성공' })
   @ApiResponse({ status: 400, description: '유효성 오류' })
@@ -50,7 +59,10 @@ export class ProfileController {
   }
 
   @Patch('/winker/:id')
-  @ApiOperation({ summary: '윙커 프로필 활성화/비활성화', description: '회원의 윙커 프로필을 활성화/비활성화합니다.' })
+  @ApiOperation({
+    summary: '윙커 프로필 활성화/비활성화',
+    description: '회원의 윙커 프로필을 활성화/비활성화합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiBody({ schema: {
     properties: {
@@ -69,7 +81,10 @@ export class ProfileController {
   }
 
   @Get('/winker/:id')
-  @ApiOperation({ summary: '윙커 프로필 조회', description: '회원의 윙커 프로필을 조회합니다.' })
+  @ApiOperation({
+    summary: '윙커 프로필 조회',
+    description: '회원의 윙커 프로필을 조회합니다.'
+  })
   @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiResponse({ status: 200, description: '조회 성공' })
   @ApiResponse({ status: 400, description: '유효성 오류' })

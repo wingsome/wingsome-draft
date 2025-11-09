@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-import { Gender } from "../enum/profile.enum";
+import { Gender } from "../enum/profile-user.enum";
 import { Exclude } from "class-transformer";
 
 @Entity('profile_user', { comment: '회원 기본 프로필 정보' })
