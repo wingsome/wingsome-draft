@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { envKeys } from 'src/common/const/env.const';
 import { User } from 'src/user/entity/user.entity';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { SignInLocalDto } from './dto/sign-in.dto';
-import { envKeys } from 'src/common/const/env.const';
 
 @Injectable()
 export class AuthService {
@@ -38,9 +38,9 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async signInLocal(request: SignInLocalDto)
+  async signInLocal(dto: SignInLocalDto)
   : Promise<{ id: number, accessToken: string; refreshToken: string }> {
-    const { region, phone, password } = request;
+    const { region, phone, password } = dto;
 
     const user = await this.userRepository.findOne({ where: { region, phone } });
     if (!user) throw new UnauthorizedException('Invalid credentials.');
@@ -57,10 +57,10 @@ export class AuthService {
     const storedCode = this.refreshCodeStore.get(id);
     console.log(code);
     console.log(storedCode);
-    if (code !== storedCode) throw new UnauthorizedException('Invalid code.');
+    if (code !== storedCode) throw new ForbiddenException('Invalid code.');
 
     const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) throw new UnauthorizedException('User not found.');
+    if (!user) throw new ForbiddenException('User not found.');
 
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await this.issueTokenPair(user);
     return { id, newAccessToken, newRefreshToken };

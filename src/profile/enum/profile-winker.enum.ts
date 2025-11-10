@@ -19,7 +19,7 @@ export enum MBTI {
 
 export enum Smoke {
   NON_SMOKER = 'NON_SMOKER',   // 비흡연
-  OCCASIONAL = 'OCCASIONAL',   // 가끔
+  SOMETIMES = 'SOMETIMES',     // 가끔
   SMOKER = 'SMOKER',           // 흡연
 }
 

@@ -7,14 +7,14 @@ import { User } from './entity/user.entity';
 
 @Injectable()
 export class UserService {
-  private readonly HASH_ROUND = 10;
-
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>
   ) {}
+  
+  private readonly HASH_ROUND = 10;
 
-  async createUser(request: CreateUserDto): Promise<{ id: number }> {
-    const { region, phone, password, recover } = request;
+  async createUser(dto: CreateUserDto): Promise<User> {
+    const { region, phone, password, recover } = dto;
 
     // 중복 활성화 계정 확인
     const activeUser = await this.userRepository.findOne({ where: { phone } });
@@ -31,8 +31,7 @@ export class UserService {
     if (!latestDeletedUser) {
       const pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
       const user = this.userRepository.create({ region, phone, pwdHash });
-      const saved = await this.userRepository.save(user);
-      return { id: saved.id };
+      return await this.userRepository.save(user);
     }
 
     // 최근 삭제 계정 존재
@@ -41,14 +40,12 @@ export class UserService {
         // 최근 삭제 계정 복구
         latestDeletedUser.deletedAt = null;
         latestDeletedUser.pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
-        const recovered = await this.userRepository.save(latestDeletedUser);
-        return { id: recovered.id };
+        return await this.userRepository.save(latestDeletedUser);
       } else if (recover === false) {
         // 재가입
         const pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
-        const latestDeletedUser = this.userRepository.create({ region, phone, pwdHash });
-        const saved = await this.userRepository.save(latestDeletedUser);
-        return { id: saved.id };
+        const user = this.userRepository.create({ region, phone, pwdHash });
+        return await this.userRepository.save(user);
       }
       throw new ConflictException(`This phone number was previously deleted at ${latestDeletedUser.deletedAt}.`);
     }

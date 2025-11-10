@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ForbiddenException, Injectable, NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, NextFunction } from 'express';
+import { JwtService } from '@nestjs/jwt';
+import { NextFunction, Request } from 'express';
 import { envKeys } from 'src/common/const/env.const';
 
 @Injectable()
@@ -16,24 +16,19 @@ export class BearerTokenMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];
-    if (!authHeader) throw new BadRequestException('Authorization header missing.');
-    // if (!authHeader) {next(); return;};
-
-    const splited = authHeader.split(' ');
-    if (splited.length !== 2) throw new UnauthorizedException('Invalid token format.');
-
-    const [bearer, token] = splited;
-    if (bearer.toLowerCase() !== 'bearer') throw new UnauthorizedException('Bearer token is required.');
+    if (!authHeader) {next(); return;};
 
     try {
+      const [, token] = authHeader.split(' ');
       const tokenType = this.jwtService.decode(token).type;
       const payload = await this.jwtService.verifyAsync(token, {
         secret: tokenType === 'access' ? this.accessTokenSecret : this.refreshTokenSecret
       });
       req.user = payload;
       next();
-    } catch (err) {
-      throw new UnauthorizedException('Expired or Invalid token.');
+    } catch (e) {
+      if(e.name === 'TokenExpiredError') throw new ForbiddenException('Expired token.');
+      next();
     }
   }
 }

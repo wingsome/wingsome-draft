@@ -8,13 +8,13 @@ export class UpdateProfileWinkerDto {
   @IsNotEmpty()
   @IsString()
   @Length(1, 100)
-  regionSi: string;
+  region1: string;
 
   @ApiProperty({ description: '지역(구)', required: true, nullable: false })
   @IsNotEmpty()
   @IsString()
   @Length(1, 100)
-  regionGu: string;
+  region2: string;
 
   @ApiProperty({ description: '회사/직무', required: true, nullable: false })
   @IsNotEmpty()

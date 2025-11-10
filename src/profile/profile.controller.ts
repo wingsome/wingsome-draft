@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, Get, Param, ParseIntPipe, Patch, Put, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, Patch, Put, Request, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BooleanFieldPipe } from 'src/common/pipe/boolean-field.pipe';
 import { UpdateProfileUserDto } from './dto/update-profile-user.dto';
@@ -11,7 +11,7 @@ import { ProfileService } from './profile.service';
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-  @Put('/user/:id')
+  @Put('user')
   @ApiOperation({
     summary: '기본 프로필 생성 및 수정',
     description: '회원의 기본 프로필을 생성 및 수정합니다.'
@@ -21,13 +21,13 @@ export class ProfileController {
   @ApiResponse({ status: 400, description: '유효성 오류' })
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async updateProfileUser(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body() request: UpdateProfileUserDto,
+    @Request() request,
+    @Body() dto: UpdateProfileUserDto,
   ) {
-    return this.profileService.updateProfileUser(userId, request);
+    return this.profileService.updateProfileUser(request.user.sub, dto);
   }
 
-  @Get('/user/:id')
+  @Get('user')
   @ApiOperation({
     summary: '기본 프로필 조회',
     description: '회원의 기본 프로필을 조회합니다.'
@@ -37,12 +37,12 @@ export class ProfileController {
   @ApiResponse({ status: 400, description: '유효성 오류' })
   @ApiResponse({ status: 404, description: '존재하지 않는 프로필' })
   async getProfileUser(
-    @Param('id', ParseIntPipe) userId: number
+    @Request() request
   ) {
-    return this.profileService.getProfileUser(userId);
+    return this.profileService.getProfileUser(request.user.sub);
   }
 
-  @Put('/winker/:id')
+  @Put('winker')
   @ApiOperation({
     summary: '윙커 프로필 생성 및 수정',
     description: '회원의 윙커 프로필을 생성 및 수정합니다.'
@@ -52,13 +52,13 @@ export class ProfileController {
   @ApiResponse({ status: 400, description: '유효성 오류' })
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async updateProfileWinker(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body() request: UpdateProfileWinkerDto,
+    @Request() request,
+    @Body() dto: UpdateProfileWinkerDto,
   ) {
-    return this.profileService.updateProfileWinker(userId, request);
+    return this.profileService.updateProfileWinker(request.user.sub, dto);
   }
 
-  @Patch('/winker/:id')
+  @Patch('winker')
   @ApiOperation({
     summary: '윙커 프로필 활성화/비활성화',
     description: '회원의 윙커 프로필을 활성화/비활성화합니다.'
@@ -74,13 +74,13 @@ export class ProfileController {
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async updateActive(
-    @Param('id', ParseIntPipe) id: number,
+    @Request() request,
     @Body('active', new BooleanFieldPipe('active')) active: boolean
   ) {
-    return this.profileService.updateActive(id, active);
+    return this.profileService.updateActive(request.user.sub, active);
   }
 
-  @Get('/winker/:id')
+  @Get('winker')
   @ApiOperation({
     summary: '윙커 프로필 조회',
     description: '회원의 윙커 프로필을 조회합니다.'
@@ -90,8 +90,8 @@ export class ProfileController {
   @ApiResponse({ status: 400, description: '유효성 오류' })
   @ApiResponse({ status: 404, description: '존재하지 않는 프로필' })
   async getProfileWinker(
-    @Param('id', ParseIntPipe) userId: number
+    @Request() request
   ) {
-    return this.profileService.getProfileWinker(userId);
+    return this.profileService.getProfileWinker(request.user.sub);
   }
 }

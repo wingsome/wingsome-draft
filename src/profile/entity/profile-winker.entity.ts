@@ -13,11 +13,11 @@ export class ProfileWinker {
   @Column({ name: 'user_id', type: 'int', unique: true, comment: '회원 ID' })
   userId: number;
 
-  @Column({ name: 'region_si', type: 'varchar', length: 100, comment: '지역(시)' })
-  regionSi: string;
+  @Column({ name: 'region_1', type: 'varchar', length: 100, comment: '지역(시)' })
+  region1: string;
 
-  @Column({ name: 'region_gu', type: 'varchar', length: 100, comment: '지역(구)' })
-  regionGu: string;
+  @Column({ name: 'region_2', type: 'varchar', length: 100, comment: '지역(구)' })
+  region2: string;
 
   @Column({ name: 'job', type: 'varchar', length: 100, comment: '회사/직무' })
   job: string;

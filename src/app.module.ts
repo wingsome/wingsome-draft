@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
@@ -13,6 +13,9 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { envKeys } from './common/const/env.const';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/guard/auth.guard';
+import { RoleGuard } from './auth/guard/role.guard';
 
 @Module({
   imports: [
@@ -53,16 +56,16 @@ import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware
       }
     }),
     UserModule, ProfileModule, AuthModule
+  ],
+  providers: [
+    {provide: APP_GUARD, useClass: AuthGuard},
+    {provide: APP_GUARD, useClass: RoleGuard}
   ]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(BearerTokenMiddleware)
-      .exclude(
-        {path: '/auth/signin/local', method: RequestMethod.POST}, // 로그인 경로 제외
-        {path: '/user', method: RequestMethod.POST}  // 회원가입 경로 제외
-      )
       .forRoutes('*'); // 전체 경로 적용
   }
 }
