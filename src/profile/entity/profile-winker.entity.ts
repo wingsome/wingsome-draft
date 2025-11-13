@@ -1,15 +1,14 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
+import { Education, MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { ProfileWinkerImage } from "./profile-winker-image.entity";
-import { Exclude } from "class-transformer";
+import { ProfileWinkerReputation } from "./profile-winker-reputation.entity";
+import { ProfileWinkerRegister } from "./profile-winker-register.entity";
 
 @Entity('profile_winker', { comment: '윙커 프로필 정보' })
 export class ProfileWinker {
-  @Exclude()
   @PrimaryGeneratedColumn({ comment: '윙커 프로필 ID' })
   id: number;
 
-  @Exclude()
   @Column({ name: 'user_id', type: 'int', unique: true, comment: '회원 ID' })
   userId: number;
 
@@ -18,6 +17,9 @@ export class ProfileWinker {
 
   @Column({ name: 'region_2', type: 'varchar', length: 100, comment: '지역(구)' })
   region2: string;
+
+  @Column({ name: 'education', type: 'enum', enum: Education, enumName: 'user_education_enum', comment: '학력' })
+  education: Education;
 
   @Column({ name: 'job', type: 'varchar', length: 100, comment: '회사/직무' })
   job: string;
@@ -46,4 +48,16 @@ export class ProfileWinker {
     { cascade: ['insert'] }
   )
   images: ProfileWinkerImage[];
+
+  @OneToMany(
+    () => ProfileWinkerReputation,
+    (profileWinkerReputation) => profileWinkerReputation.profileWinker
+  )
+  reputations: ProfileWinkerReputation[];
+
+  @OneToMany(
+    () => ProfileWinkerRegister,
+    (profileWinkerRegister) => profileWinkerRegister.profileWinker
+  )
+  registered: ProfileWinkerRegister[];
 }

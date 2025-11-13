@@ -22,6 +22,32 @@ export class AuthService {
   private get accessTokenSecret() { return this.configService.get<string>(envKeys.accessTokenSecret); }
   private get refreshTokenSecret() { return this.configService.get<string>(envKeys.refreshTokenSecret); }
 
+  async signInLocal(dto: SignInLocalDto)
+  : Promise<{ accessToken: string; refreshToken: string }> {
+    const { country, phone, password } = dto;
+
+    const user = await this.userRepository.findOne({ where: { country, phone } });
+    if (!user) throw new UnauthorizedException('invalid credentials');
+
+    const isMatch = await bcrypt.compare(password, user.pwdHash);
+    if (!isMatch) throw new UnauthorizedException('invalid credentials');
+    
+    return await this.issueTokenPair(user);
+  }
+  
+  async refreshToken(id: number, code: string)
+  : Promise<{ accessToken: string; refreshToken: string }> {
+    const storedCode = this.refreshCodeStore.get(id);
+    console.log(code);
+    console.log(storedCode);
+    if (code !== storedCode) throw new ForbiddenException('invalid code');
+
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new ForbiddenException('user not found');
+
+    return await this.issueTokenPair(user);
+  }
+
   async issueTokenPair(user: User): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, type: 'access', grade: user.grade, role: user.role },
@@ -36,33 +62,5 @@ export class AuthService {
 
     this.refreshCodeStore.set(user.id, refreshCode);
     return { accessToken, refreshToken };
-  }
-
-  async signInLocal(dto: SignInLocalDto)
-  : Promise<{ id: number, accessToken: string; refreshToken: string }> {
-    const { region, phone, password } = dto;
-
-    const user = await this.userRepository.findOne({ where: { region, phone } });
-    if (!user) throw new UnauthorizedException('Invalid credentials.');
-
-    const isMatch = await bcrypt.compare(password, user.pwdHash);
-    if (!isMatch) throw new UnauthorizedException('Invalid credentials.');
-
-    const { accessToken, refreshToken } = await this.issueTokenPair(user);
-    return { id: user.id, accessToken, refreshToken };
-  }
-  
-  async refreshToken(id: number, code: string)
-  : Promise<{ id: number, newAccessToken: string; newRefreshToken: string }> {
-    const storedCode = this.refreshCodeStore.get(id);
-    console.log(code);
-    console.log(storedCode);
-    if (code !== storedCode) throw new ForbiddenException('Invalid code.');
-
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) throw new ForbiddenException('User not found.');
-
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await this.issueTokenPair(user);
-    return { id, newAccessToken, newRefreshToken };
   }
 }

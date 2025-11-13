@@ -1,3 +1,13 @@
+export enum Education {
+  MIDDLE = 'MIDDLE',
+  HIGH = 'HIGH',
+  COLLEGE = 'COLLEGE',
+  UNIVERSITY = 'UNIVERSITY',
+  MASTER = 'MASTER',
+  DOCTOR = 'DOCTOR',
+  OTHER = 'OTHER',
+}
+
 export enum MBTI {
   ISTJ = 'ISTJ',
   ISTP = 'ISTP',

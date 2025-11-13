@@ -7,7 +7,7 @@ export class CreateUserDto {
   @IsInt()
   @Min(1)
   @Max(999)
-  region: number;
+  country: number;
 
   @ApiProperty({ description: '연락처', required: true, nullable: false })
   @IsNotEmpty()

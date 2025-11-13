@@ -1,5 +1,5 @@
 import { Body, ClassSerializerInterceptor, Controller, Delete, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiDomain, HttpMethod } from 'src/common/enum/hateoas.enum';
 import { HateoasHelper, LinkMap } from 'src/common/hateoas/hateoas.helper';
 import { SixDigitPasswordPipe } from '../common/pipe/six-digit-password.pipe';
@@ -50,7 +50,6 @@ export class UserController {
     summary: '비밀번호 변경',
     description: '기존 회원의 비밀번호를 변경합니다.'
   })
-  @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiBody({ schema: {
     properties: {
       newPassword: { type: 'string', description: '새 비밀번호', nullable: false }
@@ -62,7 +61,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async updatePassword(
     @Request() request,
-    @Body('newPassword', SixDigitPasswordPipe ) newPassword: string
+    @Body('newPassword', SixDigitPasswordPipe) newPassword: string
   ) {
     return this.userService.updatePassword(request.user.sub, newPassword);
   }
@@ -72,7 +71,6 @@ export class UserController {
     summary: '회원 탈퇴',
     description: '비밀번호 검증 후 계정을 삭제합니다.'
   })
-  @ApiParam({ name: 'id', type: Number, description: '회원 ID' })
   @ApiBody({ schema: {
     properties: {
       password: { type: 'string', description: '본인 인증용 비밀번호', nullable: false }
@@ -85,7 +83,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async deleteUser(
     @Request() request,
-    @Body('password', SixDigitPasswordPipe ) password: string
+    @Body('password', SixDigitPasswordPipe) password: string
   ) {
     return this.userService.deleteUser(request.user.sub, password);
   }

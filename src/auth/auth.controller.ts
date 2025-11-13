@@ -1,7 +1,5 @@
 import { Body, ClassSerializerInterceptor, Controller, ForbiddenException, Post, Request, UseInterceptors } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { ApiDomain, HttpMethod } from "src/common/enum/hateoas.enum";
-import { HateoasHelper, LinkMap } from "src/common/hateoas/hateoas.helper";
 import { AuthService } from "./auth.service";
 import { SignInLocalDto } from "./dto/sign-in.dto";
 import { Public } from "./guard/auth.guard";
@@ -10,8 +8,7 @@ import { Public } from "./guard/auth.guard";
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
 export class AuthController {
-  constructor(private readonly authService: AuthService,
-    private readonly hateoasHelper: HateoasHelper
+  constructor(private readonly authService: AuthService
   ) {}
 
   @Public()
@@ -26,16 +23,7 @@ export class AuthController {
   async signInLocal(
     @Body() dto: SignInLocalDto
   ) {
-    const { id, accessToken, refreshToken } = await this.authService.signInLocal(dto);
-    const links: LinkMap = this.hateoasHelper.createLinks([
-      { name: 'self_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.GET },
-      { name: 'update_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.PUT },
-      { name: 'self_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.GET },
-      { name: 'update_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.PUT },
-      { name: 'update_winker_active', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.PATCH }
-    ]);
-
-    return { accessToken, refreshToken, _links: links };
+    return await this.authService.signInLocal(dto);
   }
 
   @Public()
@@ -48,14 +36,7 @@ export class AuthController {
   async refreshToken(
     @Request() request
   ) {
-    if (request.user.type !== 'refresh') throw new ForbiddenException('refreshToken is required.');
-
-    const { id, newAccessToken, newRefreshToken }
-      = await this.authService.refreshToken(request.user.id, request.user.code);
-    const links: LinkMap = this.hateoasHelper.createLinks([
-      { name: 'self_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.GET }
-    ]);
-
-    return { newAccessToken, newRefreshToken, _links: links };
+    if (request.user.type !== 'refresh') throw new ForbiddenException('refreshToken is required');
+    return await this.authService.refreshToken(request.user.id, request.user.code);
   }
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, Min } from "class-validator";
+import { IsInt, IsNotEmpty, IsString, Matches, Max, Min } from "class-validator";
 
 export class SignInLocalDto {
   @ApiProperty({ description: '국가 번호', required: true, nullable: false })
@@ -7,7 +7,7 @@ export class SignInLocalDto {
   @IsInt()
   @Min(1)
   @Max(999)
-  region: number;
+  country: number;
 
   @ApiProperty({ description: '연락처', required: true, nullable: false })
   @IsNotEmpty()

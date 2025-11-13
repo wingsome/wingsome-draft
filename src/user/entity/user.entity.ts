@@ -6,8 +6,8 @@ export class User {
   @PrimaryGeneratedColumn({ comment: '회원 ID' })
   id: number;
 
-  @Column({ name: 'region', type: 'smallint', comment: '국가 번호' })
-  region: number;
+  @Column({ name: 'country', type: 'smallint', comment: '국가 번호' })
+  country: number;
 
   @Column({ name: 'phone', type: 'varchar', length: 15, comment: '연락처' })
   phone: string;

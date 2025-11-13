@@ -1,21 +1,25 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
-import { ProfileUser } from './profile/entity/profile-user.entity';
-import { ProfileWinkerImage } from './profile/entity/profile-winker-image.entity';
-import { ProfileWinker } from './profile/entity/profile-winker.entity';
-import { ProfileModule } from './profile/profile.module';
-import { User } from './user/entity/user.entity';
-import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { envKeys } from './common/const/env.const';
-import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
-import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { RoleGuard } from './auth/guard/role.guard';
+import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
+import { envKeys } from './common/const/env.const';
+import { ProfileUser } from './profile/entity/profile-user.entity';
+import { ProfileWinkerImage } from './profile/entity/profile-winker-image.entity';
+import { ProfileWinkerReputation } from './profile/entity/profile-winker-reputation.entity';
+import { ProfileWinker } from './profile/entity/profile-winker.entity';
+import { ProfileModule } from './profile/profile.module';
+import { Relationship } from './relation/entity/relationship.entity';
+import { RelationModule } from './relation/relation.module';
+import { User } from './user/entity/user.entity';
+import { UserModule } from './user/user.module';
+import { ProfileWinkerRegister } from './profile/entity/profile-winker-register.entity';
 
 @Module({
   imports: [
@@ -45,7 +49,10 @@ import { RoleGuard } from './auth/guard/role.guard';
           User,
           ProfileUser,
           ProfileWinker,
-          ProfileWinkerImage
+          ProfileWinkerImage,
+          ProfileWinkerReputation,
+          ProfileWinkerRegister,
+          Relationship
         ],
         synchronize: true // local only!!
       }),
@@ -55,7 +62,7 @@ import { RoleGuard } from './auth/guard/role.guard';
         return addTransactionalDataSource(new DataSource(option));
       }
     }),
-    UserModule, ProfileModule, AuthModule
+    UserModule, ProfileModule, AuthModule, RelationModule
   ],
   providers: [
     {provide: APP_GUARD, useClass: AuthGuard},
