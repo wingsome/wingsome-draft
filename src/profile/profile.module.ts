@@ -8,7 +8,7 @@ import { ProfileWinkerImage } from './entity/profile-winker-image.entity';
 import { User } from 'src/user/entity/user.entity';
 import { ProfileWinkerReputation } from './entity/profile-winker-reputation.entity';
 import { ProfileWinkerRegister } from './entity/profile-winker-register.entity';
-import { Relationship } from 'src/relation/entity/relationship.entity';
+import { Relation } from 'src/relation/entity/relation.entity';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { Relationship } from 'src/relation/entity/relationship.entity';
       ProfileWinkerImage,
       ProfileWinkerReputation,
       ProfileWinkerRegister,
-      Relationship
+      Relation
     ])
   ],
   controllers: [ProfileController],

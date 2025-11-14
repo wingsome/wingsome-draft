@@ -16,8 +16,8 @@ export class ProfileWinkerReputation {
   @Column({ name: 'reputation', type: 'text', comment: '지인소개' })
   reputation: string;
 
-  @Column({ name: 'sort', type: 'smallint', default: 0, comment: '정렬 순서' })
-  sort: number;
+  @Column({ name: 'priority', type: 'smallint', default: 0, comment: '정렬 순서' })
+  priority: number;
 
   @Column({ name: 'is_active', type: 'boolean', default: true, comment: '활성화 여부' })
   isActive: boolean;

@@ -2,10 +2,10 @@ import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { RelationType } from "../enum/relation-type.enum";
 import { RequestStatus } from "src/common/enum/request-status.enum";
 
-@Entity('relationship', { comment: '지인 요청 기록' })
+@Entity('relation', { comment: '지인 관계' })
 @Unique('uq_relation', ['userMinId', 'userMaxId'])
-export class Relationship {
-  @PrimaryGeneratedColumn({ comment: '지인 요청 ID' })
+export class Relation {
+  @PrimaryGeneratedColumn({ comment: '지인 ID' })
   id: number;
 
   @Column({ name: 'user_id', type: 'int', comment: '요청한 회원 ID' })

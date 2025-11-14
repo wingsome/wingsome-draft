@@ -59,9 +59,6 @@ export class ProfileWinkerResponseDto {
   @ApiProperty({ description: '회원의 프로필 활성화 여부' })
   isActiveByUser: boolean;
 
-  @ApiProperty({ description: '정렬 순서' })
-  priority: number;
-
   @ApiProperty({ type: [Image], description: '프로필 이미지 목록' })
   images: Image[];
 }

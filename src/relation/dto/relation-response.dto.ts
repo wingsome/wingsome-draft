@@ -3,7 +3,7 @@ import { RelationType } from "../enum/relation-type.enum";
 import { RequestStatus } from "src/common/enum/request-status.enum";
 
 export class Relation {
-  @ApiProperty({ description: '지인 요청 ID' })
+  @ApiProperty({ description: '지인 ID' })
   id: number;
 
   @ApiProperty({ description: '상대 회원 ID' })

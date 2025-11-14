@@ -45,7 +45,7 @@ export class UserController {
     return { accessToken, refreshToken, _links: links };
   }
 
-  @Patch()
+  @Patch('password')
   @ApiOperation({
     summary: '비밀번호 변경',
     description: '기존 회원의 비밀번호를 변경합니다.'

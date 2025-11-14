@@ -11,12 +11,12 @@ export class RelationController {
     private readonly relationService: RelationService
   ) {}
   
-  @Post(':userId')
+  @Post(':targetUserId')
   @ApiOperation({
     summary: '지인 요청',
     description: '상대 회원에게 지인 관계 맺기를 요청합니다.'
   })
-  @ApiParam({ name: 'userId', type: Number, description: '상대 회원 ID',  required: true })
+  @ApiParam({ name: 'targetUserId', type: Number, description: '상대 회원 ID',  required: true })
   @ApiBody({ schema: {
     properties: {
       relationType: { type: 'string', enum: Object.values(RelationType), description: '관계 유형', nullable: false }
@@ -29,14 +29,14 @@ export class RelationController {
   @ApiResponse({ status: 409, description: '이미 등록된 관계' })
   async createRelationRequest(
     @Request() request,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('targetUserId', ParseIntPipe) targetUserId: number,
     @Body('relationType') relationType: RelationType
   ) {
     if (!relationType) throw new BadRequestException('relationType should not be empty');
     if (!Object.values(RelationType).includes(relationType)) {
       throw new BadRequestException('relationType must be one of the following values: FRIEND, FAMILY, COWORKER, OTHER');
     }
-    return await this.relationService.createRelationRequest(request.user.sub, userId, relationType);
+    return await this.relationService.createRelationRequest(request.user.sub, targetUserId, relationType);
   }
   
   @Get()
@@ -51,12 +51,12 @@ export class RelationController {
     return await this.relationService.getRelations(request.user.sub);
   }
   
-  @Patch('type/:id')
+  @Patch(':relationId/type')
   @ApiOperation({
     summary: '지인 관계 유형 수정',
-    description: '지인 요청 ID를 기반으로 관계 유형을 수정합니다.'
+    description: '지인 관계 유형을 수정합니다.'
   })
-  @ApiParam({ name: 'id', type: Number, description: '지인 요청 ID',  required: true })
+  @ApiParam({ name: 'relationId', type: Number, description: '지인 ID',  required: true })
   @ApiBody({ schema: {
     properties: {
       relationType: { type: 'string', enum: Object.values(RelationType), description: '관계 유형', nullable: false }
@@ -69,22 +69,22 @@ export class RelationController {
   @ApiResponse({ status: 404, description: '존재하지 않는 관계' })
   async updateRelationType(
     @Request() request,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('relationId', ParseIntPipe) relationId: number,
     @Body('relationType') relationType: RelationType
   ) {
     if (!relationType) throw new BadRequestException('relationType should not be empty');
     if (!Object.values(RelationType).includes(relationType)) {
       throw new BadRequestException('relationType must be one of the following values: FRIEND, FAMILY, COWORKER, OTHER');
     }
-    return await this.relationService.updateRelationType(id, request.user.sub, relationType);
+    return await this.relationService.updateRelationType(relationId, request.user.sub, relationType);
   }
   
-  @Patch('status/:id')
+  @Patch(':relationId/status')
   @ApiOperation({
     summary: '지인 요청 응답: 요청 처리 상태 수정',
-    description: '지인 요청 ID를 기반으로 요청 처리 상태를 수정합니다.'
+    description: '지인 요청 처리 상태를 수정합니다.'
   })
-  @ApiParam({ name: 'id', type: Number, description: '지인 요청 ID',  required: true })
+  @ApiParam({ name: 'relationId', type: Number, description: '지인 ID',  required: true })
   @ApiBody({ schema: {
     properties: {
       status: { type: 'string', enum: [RequestStatus.ACCEPTED, RequestStatus.REJECTED], description: '요청 처리 상태', nullable: false }
@@ -93,33 +93,33 @@ export class RelationController {
   } })
   @ApiResponse({ status: 200, description: '수정 성공' })
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
-  @ApiResponse({ status: 403, description: '권한 없는 요청' })
-  @ApiResponse({ status: 404, description: '존재하지 않는 요청' })
+  @ApiResponse({ status: 403, description: '권한 없는 관계' })
+  @ApiResponse({ status: 404, description: '존재하지 않는 관계' })
   async updateStatus(
     @Request() request,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('relationId', ParseIntPipe) relationId: number,
     @Body('status') status: RequestStatus
   ) {
     if (!status) throw new BadRequestException('status should not be empty');
     if (![RequestStatus.ACCEPTED, RequestStatus.REJECTED].includes(status)) {
       throw new BadRequestException('status must be one of the following values: ACCEPTED, REJECTED');
     }
-    return await this.relationService.updateStatus(id, request.user.sub, status);
+    return await this.relationService.updateStatus(relationId, request.user.sub, status);
   }
   
-  @Delete(':id')
+  @Delete(':relationId')
   @ApiOperation({
-    summary: '지인 요청 철회',
-    description: '지인 요청 ID를 기반으로 삭제합니다.'
+    summary: '지인(요청) 철회',
+    description: '지인 관계를 삭제합니다.'
   })
   @ApiResponse({ status: 200, description: '삭제 성공' })
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
-  @ApiResponse({ status: 403, description: '권한 없는 요청' })
-  @ApiResponse({ status: 404, description: '존재하지 않는 요청' })
+  @ApiResponse({ status: 403, description: '권한 없는 관계' })
+  @ApiResponse({ status: 404, description: '존재하지 않는 관계' })
   async deleteRelationRequest(
     @Request() request,
-    @Param('id', ParseIntPipe) id: number
+    @Param('relationId', ParseIntPipe) relationId: number
   ) {
-    return await this.relationService.deleteRelationRequest(id, request.user.sub);
+    return await this.relationService.deleteRelationRequest(relationId, request.user.sub);
   }
 }

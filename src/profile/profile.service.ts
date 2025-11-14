@@ -9,9 +9,10 @@ import { ProfileUser } from './entity/profile-user.entity';
 import { ProfileWinkerImage } from './entity/profile-winker-image.entity';
 import { ProfileWinker } from './entity/profile-winker.entity';
 import { ProfileWinkerRegister } from './entity/profile-winker-register.entity';
-import { Relationship } from 'src/relation/entity/relationship.entity';
+import { Relation } from 'src/relation/entity/relation.entity';
 import { RequestStatus } from 'src/common/enum/request-status.enum';
 import { ProfileWinkerResponseDto } from './dto/profile-winker-response';
+import { ProfileWinkerReputation } from './entity/profile-winker-reputation.entity';
 
 @Injectable()
 export class ProfileService {
@@ -20,8 +21,9 @@ export class ProfileService {
     @InjectRepository(ProfileUser) private readonly profileUserRepository: Repository<ProfileUser>,
     @InjectRepository(ProfileWinker) private readonly profileWinkerRepository: Repository<ProfileWinker>,
     @InjectRepository(ProfileWinkerImage) private readonly profileWinkerImageRepository: Repository<ProfileWinkerImage>,
+    @InjectRepository(ProfileWinkerReputation) private readonly profileWinkerReputationRepository: Repository<ProfileWinkerReputation>,
     @InjectRepository(ProfileWinkerRegister) private readonly profileWinkerRegisterRepository: Repository<ProfileWinkerRegister>,
-    @InjectRepository(Relationship) private readonly relationshipRepository: Repository<Relationship>
+    @InjectRepository(Relation) private readonly relationRepository: Repository<Relation>
   ) {}
 
   async updateProfileUser(userId: number, dto: UpdateProfileUserDto): Promise<ProfileUser> {
@@ -71,16 +73,6 @@ export class ProfileService {
 
     return await this.profileWinkerRepository.save(profile);
   }
-  
-  async updateActive(userId: number, active: boolean): Promise<ProfileWinker> {
-    const profile = await this.profileWinkerRepository.findOne({
-      where: { userId },
-      relations: ['images', 'reputations', 'registered']
-    });
-    if (!profile) throw new NotFoundException('winker profile not found');
-    profile.isActive = active;
-    return await this.profileWinkerRepository.save(profile);
-  }
 
   async getProfileWinker(userId: number): Promise<ProfileWinker> {
     const profile = await this.profileWinkerRepository.findOne({
@@ -90,18 +82,40 @@ export class ProfileService {
     if (!profile) throw new NotFoundException('winker profile not found');
     return profile;
   }
+  
+  async updateProfileWinkerActive(userId: number, active: boolean): Promise<void> {
+    const profile = await this.profileWinkerRepository.findOne({
+      where: { userId },
+      relations: ['images', 'reputations', 'registered']
+    });
+    if (!profile) throw new NotFoundException('winker profile not found');
+    profile.isActive = active;
+    await this.profileWinkerRepository.save(profile);
+  }
+  
+  async updateProfileWinkerReputationActive(userId: number, reputationId: number, active: boolean): Promise<void> {
+    const reputation = await this.profileWinkerRegisterRepository.findOne({ where: { id: reputationId } });
+    if (!reputation) throw new NotFoundException('reputation of winker profile not found');
+
+    const profile = await this.profileWinkerRepository.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('winker profile not found');
+    if (profile.id !== reputation.profileWinkerId) throw new NotFoundException('do not have permission');
+
+    reputation.isActive = active;
+    await this.profileWinkerRegisterRepository.save(reputation);
+  }
 
   async registerProfileWinker(requestUserId: number, targetUserId: number): Promise<void> {
-    if (requestUserId === targetUserId) throw new BadRequestException('requested userId should not be self');
+    if (requestUserId === targetUserId) throw new BadRequestException('target user should not be self');
 
     const targetUser = await this.userRepository.findOne({ where: { id: targetUserId } });
-    if (!targetUser) throw new NotFoundException('user not found');
+    if (!targetUser) throw new NotFoundException('target user not found');
 
     const profile = await this.profileWinkerRepository.findOne({ where: { userId: targetUserId } });
-    if (!profile) throw new NotFoundException('winker profile not found');
+    if (!profile) throw new NotFoundException('target winker profile not found');
 
     const [userMinId, userMaxId] = requestUserId < targetUserId ? [requestUserId, targetUserId] : [targetUserId, requestUserId];
-    const relationship = await this.relationshipRepository.findOne({
+    const relationship = await this.relationRepository.findOne({
       where: { userMinId, userMaxId, status: RequestStatus.ACCEPTED }
     });
     if (!relationship) throw new ForbiddenException('do not have permission');
@@ -110,12 +124,12 @@ export class ProfileService {
     try {
       await this.profileWinkerRegisterRepository.save(register);
     } catch (e) {
-      if (e.code === '23505') throw new ConflictException('this winker profile already exists');
+      if (e.code === '23505') throw new ConflictException('this target winker profile already exists');
       throw e;
     }
   }
 
-  async getProfileWinkers(userId: number): Promise<ProfileWinkerResponseDto[]> {
+  async getProfileWinkersRegistered(userId: number): Promise<ProfileWinkerResponseDto[]> {
     const registers = await this.profileWinkerRegisterRepository.find({
       where: { userId }, relations: ['profileWinker', 'profileWinker.images']
     });
@@ -147,7 +161,6 @@ export class ProfileService {
         bio: p.bio,
         isActiveByWinker: p.isActive,
         isActiveByUser: r.isActive,
-        priority: r.priority,
         images: p.images.map((img) => ({
           url: img.url,
           priority: img.priority,
@@ -156,5 +169,30 @@ export class ProfileService {
     }
     
     return results;
+  }
+  
+  async updateProfileWinkerRegisteredActive(userId: number, registerId: number, active: boolean): Promise<void> {
+    const register = await this.profileWinkerRegisterRepository.findOne({ where: { id: registerId } });
+    if (!register) throw new NotFoundException('register not found');
+    if (userId !== register.userId) throw new ForbiddenException('do not have permission');
+    register.isActive = active;
+    await this.profileWinkerRegisterRepository.save(register);
+  }
+  
+  async updateProfileWinkerRegisteredReputation(userId: number, profileWinkerId: number, reputation: string): Promise<void> {
+    const profile = await this.profileWinkerRepository.findOne({ where: { id: profileWinkerId } });
+    if (!profile) throw new NotFoundException('target winker profile not found');
+
+    const targetUserId = profile.userId;
+    const [userMinId, userMaxId] = userId < targetUserId ? [userId, targetUserId] : [targetUserId, userId];
+    const relationship = await this.relationRepository.findOne({
+      where: { userMinId, userMaxId, status: RequestStatus.ACCEPTED }
+    });
+    if (!relationship) throw new ForbiddenException('do not have permission');
+
+    let entry = await this.profileWinkerReputationRepository.findOne({ where: { profileWinkerId, userId } });
+    if (entry) entry.reputation = reputation;
+    else entry = this.profileWinkerReputationRepository.create({ profileWinkerId, userId, reputation });
+    await this.profileWinkerReputationRepository.save(entry);
   }
 }

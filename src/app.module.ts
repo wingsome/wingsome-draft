@@ -15,7 +15,7 @@ import { ProfileWinkerImage } from './profile/entity/profile-winker-image.entity
 import { ProfileWinkerReputation } from './profile/entity/profile-winker-reputation.entity';
 import { ProfileWinker } from './profile/entity/profile-winker.entity';
 import { ProfileModule } from './profile/profile.module';
-import { Relationship } from './relation/entity/relationship.entity';
+import { Relation } from './relation/entity/relation.entity';
 import { RelationModule } from './relation/relation.module';
 import { User } from './user/entity/user.entity';
 import { UserModule } from './user/user.module';
@@ -52,7 +52,7 @@ import { ProfileWinkerRegister } from './profile/entity/profile-winker-register.
           ProfileWinkerImage,
           ProfileWinkerReputation,
           ProfileWinkerRegister,
-          Relationship
+          Relation
         ],
         synchronize: true // local only!!
       }),

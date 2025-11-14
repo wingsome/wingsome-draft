@@ -13,9 +13,6 @@ export class ProfileWinkerRegister {
   @Column({ name: 'user_id', type: 'int', comment: '등록 회원 ID' })
   userId: number;
 
-  @Column({ name: 'priority', type: 'smallint', default: 0, comment: '정렬 순서' })
-  priority: number;
-
   @Column({ name: 'is_active', type: 'boolean', default: true, comment: '활성화 여부' })
   isActive: boolean;
 
