@@ -18,13 +18,13 @@ export class ProfileWinkerResponseDto {
   profileWinkerId: number;
 
   @ApiProperty({ description: '이름' })
-  name: string | null;
+  name: string;
 
   @ApiProperty({ description: '출생년도' })
-  birthYear: number | null;
+  birthYear: number;
 
   @ApiProperty({ enum: Gender, description: '성별' })
-  gender: Gender | null;
+  gender: Gender;
 
   @ApiProperty({ description: '지역(시)' })
   region1: string;

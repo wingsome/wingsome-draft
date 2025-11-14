@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min, ValidateNested } from "class-validator";
 import { Education, MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { Type } from "class-transformer";
 
@@ -59,8 +59,9 @@ export class UpdateProfileWinkerDto {
   bio?: string;
   
   @ApiProperty({ type: () => Image, description: '프로필 이미지 목록', required: true, nullable: false })
-  @ArrayNotEmpty()
   @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(5)
   @ValidateNested({ each: true })
   @Type(() => Image)
   images: Image[];

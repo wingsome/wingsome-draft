@@ -123,17 +123,19 @@ export class ProfileService {
     const users = await this.profileUserRepository.find({ where: { userId: In(winkerUserIds) } });
     const userMap = new Map(users.map((u) => [u.userId, u]));
 
-    return registers.map((r) => {
+    const results: ProfileWinkerResponseDto[] = [];
+
+    for (const r of registers) {
       const p = r.profileWinker;
       const u = userMap.get(p.userId);
-
-      return {
+      if (!p || !u) continue;
+    
+      results.push({
         registerId: r.id,
         profileWinkerId: p.id,
-        name: u?.name ?? null,
-        birthYear: u?.birthYear ?? null,
-        gender: u?.gender ?? null,
-        userId: p.userId,
+        name: u.name,
+        birthYear: u.birthYear,
+        gender: u.gender,
         region1: p.region1,
         region2: p.region2,
         education: p.education,
@@ -146,11 +148,13 @@ export class ProfileService {
         isActiveByWinker: p.isActive,
         isActiveByUser: r.isActive,
         priority: r.priority,
-        images: p.images?.map((img) => ({
+        images: p.images.map((img) => ({
           url: img.url,
           priority: img.priority,
-        })) ?? [],
-      };
-    });
+        })),
+      });
+    }
+    
+    return results;
   }
 }
