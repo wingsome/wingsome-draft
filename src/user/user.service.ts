@@ -4,16 +4,20 @@ import * as bcrypt from 'bcrypt';
 import { IsNull, Not, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entity/user.entity';
+import { AuthService } from 'src/auth/auth.service';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: Repository<User>
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly authService: AuthService
   ) {}
   
   private readonly HASH_ROUND = 10;
 
-  async createUser(dto: CreateUserDto): Promise<User> {
+  @Transactional()
+  async createUser(dto: CreateUserDto): Promise<{ accessToken: string; refreshToken: string }> {
     const { country, phone, password, recover } = dto;
 
     // 중복 활성화 계정 확인
@@ -27,29 +31,28 @@ export class UserService {
       order: { deletedAt: 'DESC' }
     });
     
+    let user: User;
     // 둘 다 존재하지 않음: 신규 생성
     if (!latestDeletedUser) {
       const pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
-      const user = this.userRepository.create({ country, phone, pwdHash });
-      return await this.userRepository.save(user);
+      user = this.userRepository.create({ country, phone, pwdHash });
+      user = await this.userRepository.save(user);
     }
-
-    // 최근 삭제 계정 존재
-    if (latestDeletedUser) {
+    else {
       if (recover === true) {
         // 최근 삭제 계정 복구
         latestDeletedUser.deletedAt = null;
         latestDeletedUser.pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
-        return await this.userRepository.save(latestDeletedUser);
+        user = await this.userRepository.save(latestDeletedUser);
       } else if (recover === false) {
         // 재가입
         const pwdHash = await bcrypt.hash(password, this.HASH_ROUND);
-        const user = this.userRepository.create({ country, phone, pwdHash });
-        return await this.userRepository.save(user);
+        user = this.userRepository.create({ country, phone, pwdHash });
+        user = await this.userRepository.save(user);
       }
-      throw new ConflictException(`this phone number was previously deleted at ${latestDeletedUser.deletedAt}`);
+      else throw new ConflictException(`this phone number was previously deleted at ${latestDeletedUser.deletedAt}`);
     }
-    throw new ConflictException(`unexpected state for phone: ${phone}`);
+    return await this.authService.issueTokenPair(user)
   }
 
   async updatePassword(id: number, newPassword: string): Promise<void> {

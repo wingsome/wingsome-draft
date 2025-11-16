@@ -1,12 +1,11 @@
 import { Body, ClassSerializerInterceptor, Controller, Delete, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/auth/guard/auth.guard';
 import { ApiDomain, HttpMethod } from 'src/common/enum/hateoas.enum';
 import { HateoasHelper, LinkMap } from 'src/common/hateoas/hateoas.helper';
 import { SixDigitPasswordPipe } from '../common/pipe/six-digit-password.pipe';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from './user.service';
-import { Public } from 'src/auth/guard/auth.guard';
-import { AuthService } from 'src/auth/auth.service';
 
 @ApiTags('User')
 @Controller('user')
@@ -14,7 +13,6 @@ import { AuthService } from 'src/auth/auth.service';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly authService: AuthService,
     private readonly hateoasHelper: HateoasHelper
   ) {}
 
@@ -30,16 +28,13 @@ export class UserController {
   async createUser(
     @Body() dto: CreateUserDto
   ) {
-    const user = await this.userService.createUser(dto);
-    const { accessToken, refreshToken } = await this.authService.issueTokenPair(user);
-
-    const id = user.id;
+    const { accessToken, refreshToken } =  await this.userService.createUser(dto);
     const links: LinkMap = this.hateoasHelper.createLinks([
-      { name: 'self_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.GET },
-      { name: 'update_user', domain: ApiDomain.USER, endpoint: `profile/user/${id}`, method: HttpMethod.PUT },
-      { name: 'self_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.GET },
-      { name: 'update_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.PUT },
-      { name: 'update_winker_active', domain: ApiDomain.PROFILE, endpoint: `profile/winker/${id}`, method: HttpMethod.PATCH }
+      { name: 'self_user', domain: ApiDomain.USER, endpoint: `profile/user`, method: HttpMethod.GET },
+      { name: 'update_user', domain: ApiDomain.USER, endpoint: `profile/user`, method: HttpMethod.PUT },
+      { name: 'self_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker`, method: HttpMethod.GET },
+      { name: 'update_winker', domain: ApiDomain.PROFILE, endpoint: `profile/winker`, method: HttpMethod.PUT },
+      { name: 'update_winker_active', domain: ApiDomain.PROFILE, endpoint: `profile/winker`, method: HttpMethod.PATCH }
     ]);
 
     return { accessToken, refreshToken, _links: links };

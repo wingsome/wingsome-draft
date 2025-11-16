@@ -12,14 +12,13 @@ import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware
 import { envKeys } from './common/const/env.const';
 import { ProfileUser } from './profile/entity/profile-user.entity';
 import { ProfileWinkerImage } from './profile/entity/profile-winker-image.entity';
-import { ProfileWinkerReputation } from './profile/entity/profile-winker-reputation.entity';
+import { ProfileWinkerRegister } from './profile/entity/profile-winker-register.entity';
 import { ProfileWinker } from './profile/entity/profile-winker.entity';
 import { ProfileModule } from './profile/profile.module';
 import { Relation } from './relation/entity/relation.entity';
 import { RelationModule } from './relation/relation.module';
 import { User } from './user/entity/user.entity';
 import { UserModule } from './user/user.module';
-import { ProfileWinkerRegister } from './profile/entity/profile-winker-register.entity';
 
 @Module({
   imports: [
@@ -34,7 +33,8 @@ import { ProfileWinkerRegister } from './profile/entity/profile-winker-register.
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
         ACCESS_TOKEN_SECRET: Joi.string().required(),
-        REFRESH_TOKEN_SECRET: Joi.string().required()
+        REFRESH_TOKEN_SECRET: Joi.string().required(),
+        VERIFY_TOKEN_SECRET: Joi.string().required()
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -50,7 +50,6 @@ import { ProfileWinkerRegister } from './profile/entity/profile-winker-register.
           ProfileUser,
           ProfileWinker,
           ProfileWinkerImage,
-          ProfileWinkerReputation,
           ProfileWinkerRegister,
           Relation
         ],

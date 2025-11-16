@@ -7,6 +7,7 @@ const dbPassword = 'DB_PASSWORD';
 const dbDatabase = 'DB_DATABASE';
 const accessTokenSecret = 'ACCESS_TOKEN_SECRET';
 const refreshTokenSecret = 'REFRESH_TOKEN_SECRET';
+const verifyTokenSecret = 'VERIFY_TOKEN_SECRET';
 
 export const envKeys = {
     env,
@@ -17,5 +18,6 @@ export const envKeys = {
     dbPassword,
     dbDatabase,
     accessTokenSecret,
-    refreshTokenSecret
+    refreshTokenSecret,
+    verifyTokenSecret
 }

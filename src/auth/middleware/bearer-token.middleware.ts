@@ -13,6 +13,7 @@ export class BearerTokenMiddleware implements NestMiddleware {
 
   private get accessTokenSecret() { return this.configService.get<string>(envKeys.accessTokenSecret); }
   private get refreshTokenSecret() { return this.configService.get<string>(envKeys.refreshTokenSecret); }
+  private get verifyTokenSecret() { return this.configService.get<string>(envKeys.verifyTokenSecret); }
 
   async use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];
@@ -27,7 +28,7 @@ export class BearerTokenMiddleware implements NestMiddleware {
       req.user = payload;
       next();
     } catch (e) {
-      if(e.name === 'TokenExpiredError') throw new ForbiddenException('Expired token.');
+      if(e.name === 'TokenExpiredError') throw new ForbiddenException('Expired token');
       next();
     }
   }

@@ -58,7 +58,8 @@ export class UpdateProfileWinkerDto {
   @IsString()
   bio?: string;
   
-  @ApiProperty({ type: () => Image, description: '프로필 이미지 목록', required: true, nullable: false })
+  @ApiProperty({ type: () => Image, isArray: true, description: '프로필 이미지 목록', required: true, nullable: false })
+  @IsNotEmpty()
   @IsArray()
   @ArrayMinSize(2)
   @ArrayMaxSize(5)
@@ -69,13 +70,11 @@ export class UpdateProfileWinkerDto {
 
 export class Image {
   @ApiProperty({ description: '이미지 URL 또는 S3 Key', required: true, nullable: false })
-  @IsOptional()
   @IsNotEmpty()
   @IsString()
   url: string;
 
   @ApiProperty({ description: '정렬 순서', required: true, nullable: false })
-  @IsOptional()
   @IsNotEmpty()
   @IsInt()
   priority: number;

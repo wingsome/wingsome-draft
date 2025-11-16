@@ -1,7 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Education, MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { ProfileWinkerImage } from "./profile-winker-image.entity";
-import { ProfileWinkerReputation } from "./profile-winker-reputation.entity";
 import { ProfileWinkerRegister } from "./profile-winker-register.entity";
 
 @Entity('profile_winker', { comment: '윙커 프로필 정보' })
@@ -39,8 +38,8 @@ export class ProfileWinker {
   @Column({ name: 'bio', type: 'text', nullable: true, comment: '자기소개' })
   bio: string | null;
 
-  @Column({ name: 'is_active', type: 'boolean', default: true, comment: '활성화 여부' })
-  isActive: boolean;
+  @Column({ name: 'visible', type: 'boolean', default: true, comment: '프로필 노출 여부(소유자)' })
+  visible: boolean;
 
   @OneToMany(
     () => ProfileWinkerImage,
@@ -48,12 +47,6 @@ export class ProfileWinker {
     { cascade: ['insert'] }
   )
   images: ProfileWinkerImage[];
-
-  @OneToMany(
-    () => ProfileWinkerReputation,
-    (profileWinkerReputation) => profileWinkerReputation.profileWinker
-  )
-  reputations: ProfileWinkerReputation[];
 
   @OneToMany(
     () => ProfileWinkerRegister,

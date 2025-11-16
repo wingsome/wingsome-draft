@@ -6,15 +6,18 @@ import { RelationType } from './enum/relation-type.enum';
 import { User } from 'src/user/entity/user.entity';
 import { RelationResponseDto } from './dto/relation-response.dto';
 import { RequestStatus } from 'src/common/enum/request-status.enum';
+import { ProfileService } from 'src/profile/profile.service';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class RelationService {
   constructor(
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Relation) private readonly relationRepository: Repository<Relation>,
-    @InjectRepository(User) private readonly userRepository: Repository<User>
+    private readonly profileService: ProfileService
   ) {}
 
-  async createRelationRequest(requestUserId: number, targetUserId: number, relationType: RelationType): Promise<void> {
+  async createRelation(requestUserId: number, targetUserId: number, relationType: RelationType): Promise<void> {
     if (requestUserId === targetUserId) throw new BadRequestException('target user should not be self');
 
     const user = await this.userRepository.findOne({ where: { id: targetUserId } });
@@ -57,7 +60,7 @@ export class RelationService {
     return response;
   }
 
-  async updateRelationType(relationId: number, userId: number, relationType: RelationType): Promise<void> {
+  async updateRelationType(userId: number, relationId: number, relationType: RelationType): Promise<void> {
     const relation = await this.relationRepository.findOne({ where: { id: relationId } });
     if (!relation) throw new NotFoundException('relation not found');
     if (relation.userMinId !== userId && relation.userMaxId !== userId) {
@@ -67,20 +70,25 @@ export class RelationService {
     await this.relationRepository.save(relation);
   }
 
-  async updateStatus(relationId: number, userId: number, status: RequestStatus): Promise<void> {
+  @Transactional()
+  async updateeRelationStatus(userId: number, relationId: number): Promise<void> {
     const relation = await this.relationRepository.findOne({ where: { id: relationId } });
-    if (!relation) throw new NotFoundException('request not found');
+    if (!relation) throw new NotFoundException('relation not found');
     if (relation.userId === userId || (relation.userMinId !== userId && relation.userMaxId !== userId)) {
       throw new ForbiddenException('do not have permission');
     }
-    relation.status = status;
+    relation.status = RequestStatus.ACCEPTED;
     await this.relationRepository.save(relation);
   }
   
-  async deleteRelationRequest(relationId: number, userId: number): Promise<void> {
+  @Transactional()
+  async deleteRelation(userId: number, relationId: number): Promise<void> {
     const relation = await this.relationRepository.findOne({ where: { id: relationId } });
-    if (!relation) throw new NotFoundException('request not found');
-    if (relation.userId !== userId) throw new ForbiddenException('do not have permission');
+    if (!relation) throw new NotFoundException('relation not found');
+    if (relation.userMinId !== userId && relation.userMaxId !== userId) {
+      throw new ForbiddenException('do not have permission');
+    }
+    await this.profileService.deleteProfileWinkerRegistersByDeleteRelation(userId, relationId);
     await this.relationRepository.remove(relation);
   }
 }

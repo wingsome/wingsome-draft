@@ -10,12 +10,23 @@ export class Image {
   priority: number;
 }
 
-export class ProfileWinkerResponseDto {
-  @ApiProperty({ description: '프로필 등록 ID' })
-  registerId: number;
+export class Register {
+  @ApiProperty({ description: '지인 회원 ID' })
+  userId: number;
 
-  @ApiProperty({ description: '윙커 프로필 ID' })
-  profileWinkerId: number;
+  @ApiProperty({ description: '지인소개', required: false })
+  bio?: string | null;
+  
+  @ApiProperty({ description: '정렬 순서' })
+  priority: number;
+}
+
+export class WinkerInDepthsResponseDto {
+  @ApiProperty({ description: '관계 깊이' })
+  depth: number;
+
+  @ApiProperty({ description: '윙커 회원 ID' })
+  userId: number;
 
   @ApiProperty({ description: '이름' })
   name: string;
@@ -53,12 +64,9 @@ export class ProfileWinkerResponseDto {
   @ApiProperty({ description: '자기소개', required: false })
   bio?: string | null;
 
-  @ApiProperty({ description: '윙커 회원의 프로필 활성화 여부' })
-  isActiveByWinker: boolean;
-
-  @ApiProperty({ description: '회원의 프로필 활성화 여부' })
-  isActiveByUser: boolean;
-
   @ApiProperty({ type: [Image], description: '프로필 이미지 목록' })
   images: Image[];
+
+  @ApiProperty({ type: [Register], description: '지인 목록' })
+  registers: Register[];
 }
