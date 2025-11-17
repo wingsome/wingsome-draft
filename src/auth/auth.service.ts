@@ -13,8 +13,7 @@ import { randomInt } from 'crypto';
 
 @Injectable()
 export class AuthService {
-  private codeStore: Map<string, number> = new Map();
-  private verifyCodeStore: Map<string, string> = new Map();
+  private verifyCodeStore: Map<string, number> = new Map();
   private refreshCodeStore: Map<number, string> = new Map();
 
   constructor(
@@ -31,24 +30,21 @@ export class AuthService {
     const { country, phone } = dto;
     const key = `${country}:${phone}`;
     const code = randomInt(100000, 999999);
-    this.codeStore.set(key, code);
+    this.verifyCodeStore.set(key, code);
     return code;
   }
 
   async verifyCode(dto: VerifyPhoneDto, code: number): Promise<{ verifyToken: string }> {
     const { country, phone } = dto;
     const key = `${country}:${phone}`;
-    const storedCode = this.codeStore.get(key);
+    const storedCode = this.verifyCodeStore.get(key);
     if (!storedCode || code !== storedCode) throw new UnauthorizedException('invalid code');
-    this.codeStore.delete(key);
+    this.verifyCodeStore.delete(key);
 
-    const verifyCode = uuidv4();
     const verifyToken = await this.jwtService.signAsync(
-      { sub: key, type: 'verify', code: verifyCode },
+      { sub: key, type: 'verify' },
       { secret: this.verifyTokenSecret, expiresIn: '5m' }
     );
-    this.verifyCodeStore.set(key, verifyCode);
-
     return { verifyToken };
   }
 

@@ -5,6 +5,7 @@ import { SignInLocalDto } from "./dto/sign-in.dto";
 import { Public } from "./guard/auth.guard";
 import { VerifyPhoneDto } from "./dto/verify-phone.dto";
 
+@Public()
 @ApiTags('Auth')
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -12,7 +13,6 @@ export class AuthController {
   constructor(private readonly authService: AuthService
   ) {}
 
-  @Public()
   @Post('code/request')
   @ApiOperation({
     summary: '연락처 인증 코드 발급',
@@ -26,7 +26,6 @@ export class AuthController {
     return await this.authService.generateCode(dto);
   }
 
-  @Public()
   @Post('code/verify')
   @ApiOperation({
     summary: '연락처 인증 코드 검증',
@@ -43,7 +42,6 @@ export class AuthController {
     return await this.authService.verifyCode(dto, code);
   }
 
-  @Public()
   @Post('signin/local')
   @ApiOperation({
     summary: '로컬 로그인',
@@ -59,7 +57,6 @@ export class AuthController {
     return await this.authService.signInLocal(dto);
   }
 
-  @Public()
   @Post('refresh')
   @ApiOperation({
     summary: '토큰 재발급',
