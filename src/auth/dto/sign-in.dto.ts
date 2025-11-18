@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsString, Matches } from "class-validator";
+import { IsNotEmpty, IsString, Matches } from "class-validator";
 
 export class SignInLocalDto {
   @ApiProperty({ description: '국가 번호', required: true, nullable: false })
   @IsNotEmpty()
-  @IsInt()
+  @IsString()
   @Matches(/^\d{1,3}$/)
   country: string;
 

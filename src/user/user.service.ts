@@ -16,10 +16,13 @@ export class UserService {
   private readonly HASH_ROUND = 10;
 
   @Transactional()
-  async createUser(country: string, phone: string, password: string, recover: boolean): Promise<{ accessToken: string; refreshToken: string }> {
+  async createUser(country: string, phone: string, password: string, recover?: boolean): Promise<{ accessToken: string; refreshToken: string }> {
     // 중복 활성화 계정 확인
     const activeUser = await this.userRepository.findOne({ where: { country, phone } });
-    if (activeUser) throw new ConflictException('this phone number has already been registered');
+    if (activeUser) throw new ConflictException({
+      message: 'this phone number has already been registered',
+      deletedAt: null
+    });
 
     // 최근 삭제 계정 확인
     const latestDeletedUser = await this.userRepository.findOne({
@@ -47,7 +50,10 @@ export class UserService {
         user = this.userRepository.create({ country, phone, pwdHash });
         user = await this.userRepository.save(user);
       }
-      else throw new ConflictException(`this phone number was previously deleted at ${latestDeletedUser.deletedAt}`);
+      else throw new ConflictException({
+        message: 'this phone number was previously deleted',
+        deletedAt: latestDeletedUser.deletedAt
+      });
     }
     return await this.authService.issueTokenPair(user)
   }

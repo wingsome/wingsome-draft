@@ -1,11 +1,11 @@
 import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Public } from 'src/auth/guard/auth.guard';
 import { ApiDomain, HttpMethod } from 'src/common/enum/hateoas.enum';
 import { HateoasHelper, LinkMap } from 'src/common/hateoas/hateoas.helper';
 import { SixDigitPasswordPipe } from '../common/pipe/six-digit-password.pipe';
 import { UserService } from './user.service';
 import { BooleanFieldPipe } from 'src/common/pipe/boolean-field.pipe';
+import { Public } from 'src/auth/decorator/public.decorator';
 
 @ApiTags('User')
 @Controller('user')
@@ -35,9 +35,9 @@ export class UserController {
   async createUser(
     @Request() request,
     @Body('password', SixDigitPasswordPipe) password: string,
-    @Body('recover', new BooleanFieldPipe('recover')) recover: boolean
+    @Body('recover', new BooleanFieldPipe('recover', false)) recover?: boolean
   ) {
-    if (request.user.type !== 'verify') throw new BadRequestException('verifyToken is required');
+    if (!request.user || request.user.type !== 'verify') throw new BadRequestException('verifyToken is required');
     const [country, phone] = (request.user.sub).split(':');
 
     const { accessToken, refreshToken } =  await this.userService.createUser(country, phone, password, recover);
@@ -71,7 +71,7 @@ export class UserController {
     @Request() request,
     @Body('newPassword', SixDigitPasswordPipe) newPassword: string
   ) {
-    if (request.user.type !== 'verify') throw new BadRequestException('verifyToken is required');
+    if (!request.user || request.user.type !== 'verify') throw new BadRequestException('verifyToken is required');
     const [country, phone] = (request.user.sub).split(':');
     return this.userService.updatePassword(country, phone, newPassword);
   }

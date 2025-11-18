@@ -11,9 +11,9 @@ export class BearerTokenMiddleware implements NestMiddleware {
     private readonly configService: ConfigService
   ) {}
 
-  private get accessTokenSecret() { return this.configService.get<string>(envKeys.accessTokenSecret); }
-  private get refreshTokenSecret() { return this.configService.get<string>(envKeys.refreshTokenSecret); }
-  private get verifyTokenSecret() { return this.configService.get<string>(envKeys.verifyTokenSecret); }
+  private get accessTokenSecret() { return this.configService.get<string>(envKeys.accessTokenSecret)!; }
+  private get refreshTokenSecret() { return this.configService.get<string>(envKeys.refreshTokenSecret)!; }
+  private get verifyTokenSecret() { return this.configService.get<string>(envKeys.verifyTokenSecret)!; }
 
   async use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];
@@ -22,10 +22,16 @@ export class BearerTokenMiddleware implements NestMiddleware {
     try {
       const [, token] = authHeader.split(' ');
       const tokenType = this.jwtService.decode(token).type;
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: tokenType === 'access' ? this.accessTokenSecret : this.refreshTokenSecret
-      });
-      req.user = payload;
+
+      let secret: string;
+      switch (tokenType) {
+        case 'access': secret = this.accessTokenSecret; break;
+        case 'refresh': secret = this.refreshTokenSecret; break;
+        case 'verify': secret = this.verifyTokenSecret; break;
+        default: next(); return;
+      }
+      
+      req.user = await this.jwtService.verifyAsync(token, { secret });
       next();
     } catch (e) {
       if(e.name === 'TokenExpiredError') throw new ForbiddenException('Expired token');

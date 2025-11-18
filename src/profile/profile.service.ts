@@ -41,18 +41,6 @@ export class ProfileService {
     if (!profile) throw new NotFoundException('user profile not found');
     return profile;
   }
-  
-  async getProfileUsers(params: { phones?: string[]; userIds?: number[]; }): Promise<ProfileUser[]> {
-    const { phones, userIds } = params;
-    let targetUserIds: number[] = userIds ?? [];
-    
-    if (phones && phones.length > 0) {
-      const users = await this.userRepository.find({ select: ['id'], where: { phone: In(phones) } });
-      targetUserIds = users.map((u) => u.id);
-    }
-
-    return await this.profileUserRepository.find({ where: { userId: In(targetUserIds) } });
-  }
 
   @Transactional()
   async updateProfileWinker(userId: number, dto: UpdateProfileWinkerDto): Promise<void> {
@@ -81,10 +69,14 @@ export class ProfileService {
   }
 
   async getProfileWinker(userId: number): Promise<ProfileWinker> {
-    const profile = await this.profileWinkerRepository.findOne({
-      where: { userId },
-      relations: ['images', 'registered']
-    });
+    const profile = await this.profileWinkerRepository
+      .createQueryBuilder('winker')
+      .leftJoinAndSelect('winker.images', 'images')
+      .leftJoinAndSelect('winker.registered', 'registered')
+      .where('winker.userId = :userId', { userId })
+      .orderBy('images.priority', 'ASC')
+      .addOrderBy('registered.priorityBio', 'DESC')
+      .getOne();
     if (!profile) throw new NotFoundException('winker profile not found');
     return profile;
   }
@@ -253,6 +245,18 @@ export class ProfileService {
     
     if (profileA) await this.profileWinkerRegisterRepository.delete({ profileWinkerId: profileA.id, userId: userB });
     if (profileB) await this.profileWinkerRegisterRepository.delete({ profileWinkerId: profileB.id, userId: userA });
+  }
+  
+  async getProfileUsers(params: { phones?: string[]; userIds?: number[]; }): Promise<ProfileUser[]> {
+    const { phones, userIds } = params;
+    let targetUserIds: number[] = userIds ?? [];
+    
+    if (phones && phones.length > 0) {
+      const users = await this.userRepository.find({ select: ['id'], where: { phone: In(phones) } });
+      targetUserIds = users.map((u) => u.id);
+    }
+
+    return await this.profileUserRepository.find({ where: { userId: In(targetUserIds) } });
   }
 
   /**
