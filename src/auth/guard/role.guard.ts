@@ -1,7 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Role } from "src/common/enum/user-grade-role.enum";
-import { Public } from "./auth.guard";
+import { RBAC } from "../decorator/rbac.decorator";
+import { Public } from "../decorator/public.decorator";
 
 @Injectable()
 export class RoleGuard implements CanActivate {
@@ -20,5 +21,3 @@ export class RoleGuard implements CanActivate {
     return role <= request.user.role;
   }
 }
-
-export const RBAC = Reflector.createDecorator<Role>()

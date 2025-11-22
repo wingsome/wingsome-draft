@@ -42,25 +42,6 @@ export class ProfileController {
     return this.profileService.getProfileUser(request.user.sub);
   }
 
-  @Get('users')
-  @ApiOperation({
-    summary: '지인 프로필 조회',
-    description: '연락처 혹은 회원 ID 리스트 기반으로 회원 프로필 리스트를 추출합니다.'
-  })
-  @ApiQuery({ name: 'phones', type: 'string', required: false, description: '연락처 목록(쉼표 구분)' })
-  @ApiQuery({ name: 'userIds', type: 'string', required: false, description: '회원 ID 목록(쉼표 구분)' })
-  @ApiResponse({ status: 200, description: '조회 성공' })
-  @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
-  async getProfileUsers(
-    @Query('phones', new ParseArrayPipe({ items: String, separator: ',', optional: true })) phones?: string[],
-    @Query('userIds', new ParseArrayPipe({ items: Number, separator: ',', optional: true })) userIds?: number[]
-  ) {
-    if ((!phones || phones.length === 0) && (!userIds || userIds.length === 0)) {
-      throw new BadRequestException('one of phones or userIds should not be empty');
-    }
-    return this.profileService.getProfileUsers({ phones, userIds });
-  }
-
   @Put('winker')
   @ApiOperation({
     summary: '내 윙커 프로필 생성 및 수정',
@@ -217,6 +198,25 @@ export class ProfileController {
     @Param('registerId', ParseIntPipe) registerId: number
   ) {
     return this.profileService.deleteProfileWinkerRegistered(request.user.sub, registerId);
+  }
+
+  @Get('users')
+  @ApiOperation({
+    summary: '지인 프로필 조회',
+    description: '연락처 혹은 회원 ID 리스트 기반으로 회원 프로필 리스트를 추출합니다.'
+  })
+  @ApiQuery({ name: 'phones', type: 'string', required: false, description: '연락처 목록(쉼표 구분)' })
+  @ApiQuery({ name: 'userIds', type: 'string', required: false, description: '회원 ID 목록(쉼표 구분)' })
+  @ApiResponse({ status: 200, description: '조회 성공' })
+  @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
+  async getProfileUsers(
+    @Query('phones', new ParseArrayPipe({ items: String, separator: ',', optional: true })) phones?: string[],
+    @Query('userIds', new ParseArrayPipe({ items: Number, separator: ',', optional: true })) userIds?: number[]
+  ) {
+    if ((!phones || phones.length === 0) && (!userIds || userIds.length === 0)) {
+      throw new BadRequestException('one of phones or userIds should not be empty');
+    }
+    return this.profileService.getProfileUsers({ phones, userIds });
   }
 
   @Get('winkers')

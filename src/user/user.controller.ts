@@ -1,11 +1,11 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Public } from 'src/auth/guard/auth.guard';
 import { ApiDomain, HttpMethod } from 'src/common/enum/hateoas.enum';
 import { HateoasHelper, LinkMap } from 'src/common/hateoas/hateoas.helper';
 import { SixDigitPasswordPipe } from '../common/pipe/six-digit-password.pipe';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from './user.service';
+import { BooleanFieldPipe } from 'src/common/pipe/boolean-field.pipe';
+import { Public } from 'src/auth/decorator/public.decorator';
 
 @ApiTags('User')
 @Controller('user')
@@ -22,13 +22,25 @@ export class UserController {
     summary: '회원 가입',
     description: '신규 계정을 생성하거나, 탈퇴 계정을 복구합니다.'
   })
+  @ApiBody({ schema: {
+    properties: {
+      password: { type: 'string', description: '비밀번호', nullable: false },
+      recover: { type: 'boolean', description: '계정 복구 여부', nullable: false }
+    },
+    required: ['password']
+  } })
   @ApiResponse({ status: 201, description: '생성 성공' })
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
   @ApiResponse({ status: 409, description: '이미 등록 혹은 삭제된 계정(연락처)' })
   async createUser(
-    @Body() dto: CreateUserDto
+    @Request() request,
+    @Body('password', SixDigitPasswordPipe) password: string,
+    @Body('recover', new BooleanFieldPipe('recover', false)) recover?: boolean
   ) {
-    const { accessToken, refreshToken } =  await this.userService.createUser(dto);
+    if (!request.user || request.user.type !== 'verify') throw new BadRequestException('verifyToken is required');
+    const [country, phone] = (request.user.sub).split(':');
+
+    const { accessToken, refreshToken } =  await this.userService.createUser(country, phone, password, recover);
     const links: LinkMap = this.hateoasHelper.createLinks([
       { name: 'self_user', domain: ApiDomain.USER, endpoint: `profile/user`, method: HttpMethod.GET },
       { name: 'update_user', domain: ApiDomain.USER, endpoint: `profile/user`, method: HttpMethod.PUT },
@@ -40,6 +52,7 @@ export class UserController {
     return { accessToken, refreshToken, _links: links };
   }
 
+  @Public()
   @Patch('password')
   @ApiOperation({
     summary: '비밀번호 변경',
@@ -58,7 +71,9 @@ export class UserController {
     @Request() request,
     @Body('newPassword', SixDigitPasswordPipe) newPassword: string
   ) {
-    return this.userService.updatePassword(request.user.sub, newPassword);
+    if (!request.user || request.user.type !== 'verify') throw new BadRequestException('verifyToken is required');
+    const [country, phone] = (request.user.sub).split(':');
+    return this.userService.updatePassword(country, phone, newPassword);
   }
 
   @Delete()

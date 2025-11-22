@@ -2,8 +2,8 @@ import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Pars
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { SignInLocalDto } from "./dto/sign-in.dto";
-import { Public } from "./guard/auth.guard";
 import { VerifyPhoneDto } from "./dto/verify-phone.dto";
+import { Public } from "./decorator/public.decorator";
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -67,12 +67,28 @@ export class AuthController {
   })
   @ApiResponse({ status: 201, description: '재발급 성공' })
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
-  @ApiResponse({ status: 401, description: '코드 매칭 실패' })
+  @ApiResponse({ status: 401, description: 'RT 검증 실패' })
   @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
   async refreshToken(
     @Request() request
   ) {
-    if (request.user.type !== 'refresh') throw new BadRequestException('refreshToken is required');
+    if (!request.user || request.user.type !== 'refresh') throw new BadRequestException('refreshToken is required');
     return await this.authService.refreshToken(request.user.sub, request.user.code);
+  }
+
+  @Public()
+  @Post('signout')
+  @ApiOperation({
+    summary: '로그아웃',
+    description: 'RT를 무효화합니다.'
+  })
+  @ApiResponse({ status: 201, description: '로그아웃 성공' })
+  @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
+  @ApiResponse({ status: 401, description: 'RT 검증 실패' })
+  async signOut(
+    @Request() request
+  ) {
+    if (!request.user || request.user.type !== 'refresh') throw new BadRequestException('refreshToken is required');
+    return await this.authService.signOut(request.user.sub, request.user.code);
   }
 }

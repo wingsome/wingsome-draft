@@ -2,7 +2,6 @@ import { ConflictException, Injectable, NotFoundException, UnauthorizedException
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Not, Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entity/user.entity';
 import { AuthService } from 'src/auth/auth.service';
 import { Transactional } from 'typeorm-transactional';
@@ -17,12 +16,13 @@ export class UserService {
   private readonly HASH_ROUND = 10;
 
   @Transactional()
-  async createUser(dto: CreateUserDto): Promise<{ accessToken: string; refreshToken: string }> {
-    const { country, phone, password, recover } = dto;
-
+  async createUser(country: string, phone: string, password: string, recover?: boolean): Promise<{ accessToken: string; refreshToken: string }> {
     // 중복 활성화 계정 확인
     const activeUser = await this.userRepository.findOne({ where: { country, phone } });
-    if (activeUser) throw new ConflictException('this phone number has already been registered');
+    if (activeUser) throw new ConflictException({
+      message: 'this phone number has already been registered',
+      deletedAt: null
+    });
 
     // 최근 삭제 계정 확인
     const latestDeletedUser = await this.userRepository.findOne({
@@ -50,13 +50,16 @@ export class UserService {
         user = this.userRepository.create({ country, phone, pwdHash });
         user = await this.userRepository.save(user);
       }
-      else throw new ConflictException(`this phone number was previously deleted at ${latestDeletedUser.deletedAt}`);
+      else throw new ConflictException({
+        message: 'this phone number was previously deleted',
+        deletedAt: latestDeletedUser.deletedAt
+      });
     }
     return await this.authService.issueTokenPair(user)
   }
 
-  async updatePassword(id: number, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id } });
+  async updatePassword(country: string, phone: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { country, phone } });
     if (!user) throw new NotFoundException('user not found');
 
     const newHash = await bcrypt.hash(newPassword, this.HASH_ROUND);

@@ -2,10 +2,17 @@ import { BadRequestException, Injectable, PipeTransform } from "@nestjs/common";
 
 @Injectable()
 export class BooleanFieldPipe implements PipeTransform {
-  constructor(private readonly fieldName: string) {}
+  constructor(
+    private readonly fieldName: string,
+    private readonly required: boolean = true
+  ) {}
 
   transform(value: any) {
-    if (value === undefined || value === null) throw new BadRequestException(`${this.fieldName} should not be empty`);
+    if (value === undefined || value === null) {
+      if (!this.required) return undefined;
+      else throw new BadRequestException(`${this.fieldName} should not be empty`);
+    }
+    
     if (typeof value === 'string') {
       const lower = value.toLowerCase().trim();
       if (lower === 'true') return true;

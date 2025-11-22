@@ -6,10 +6,10 @@ export class User {
   @PrimaryGeneratedColumn({ comment: '회원 ID' })
   id: number;
 
-  @Column({ name: 'country', type: 'smallint', comment: '국가 번호' })
-  country: number;
+  @Column({ name: 'country', type: 'varchar', length: 3, comment: '국가 번호' })
+  country: string;
 
-  @Column({ name: 'phone', type: 'varchar', length: 15, comment: '연락처' })
+  @Column({ name: 'phone', type: 'varchar', length: 14, comment: '연락처' })
   phone: string;
 
   @Column({ name: 'pwd_hash', type: 'char', length: 60, comment: '비밀번호' })

@@ -3,18 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomBytes, randomInt } from 'crypto';
 import { envKeys } from 'src/common/const/env.const';
 import { User } from 'src/user/entity/user.entity';
 import { Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
 import { SignInLocalDto } from './dto/sign-in.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
-import { randomInt } from 'crypto';
 
 @Injectable()
 export class AuthService {
-  private codeStore: Map<string, number> = new Map();
-  private verifyCodeStore: Map<string, string> = new Map();
+  private verifyCodeStore: Map<string, number> = new Map();
   private refreshCodeStore: Map<number, string> = new Map();
 
   constructor(
@@ -31,24 +29,21 @@ export class AuthService {
     const { country, phone } = dto;
     const key = `${country}:${phone}`;
     const code = randomInt(100000, 999999);
-    this.codeStore.set(key, code);
+    this.verifyCodeStore.set(key, code);
     return code;
   }
 
   async verifyCode(dto: VerifyPhoneDto, code: number): Promise<{ verifyToken: string }> {
     const { country, phone } = dto;
     const key = `${country}:${phone}`;
-    const storedCode = this.codeStore.get(key);
+    const storedCode = this.verifyCodeStore.get(key);
     if (!storedCode || code !== storedCode) throw new UnauthorizedException('invalid code');
-    this.codeStore.delete(key);
+    this.verifyCodeStore.delete(key);
 
-    const verifyCode = uuidv4();
     const verifyToken = await this.jwtService.signAsync(
-      { sub: key, type: 'verify', code: verifyCode },
+      { sub: key, type: 'verify' },
       { secret: this.verifyTokenSecret, expiresIn: '5m' }
     );
-    this.verifyCodeStore.set(key, verifyCode);
-
     return { verifyToken };
   }
 
@@ -77,13 +72,20 @@ export class AuthService {
     return await this.issueTokenPair(user);
   }
 
+  async signOut(id: number, code: string): Promise<void> {
+    const storedCode = this.refreshCodeStore.get(id);
+    if (!storedCode || code !== storedCode) throw new UnauthorizedException('invalid code');
+    this.refreshCodeStore.delete(id);
+  }
+
   async issueTokenPair(user: User): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, type: 'access', grade: user.grade, role: user.role },
-      { secret: this.accessTokenSecret, expiresIn: '10m' }
+      { secret: this.accessTokenSecret, expiresIn: '1d' }
+      // { secret: this.accessTokenSecret, expiresIn: '10m' }
     );
 
-    const refreshCode = uuidv4();
+    const refreshCode = randomBytes(16).toString('hex');
     const refreshToken = await this.jwtService.signAsync(
       { sub: user.id, type: 'refresh', code: refreshCode },
       { secret: this.refreshTokenSecret, expiresIn: '1w' }

@@ -41,18 +41,6 @@ export class ProfileService {
     if (!profile) throw new NotFoundException('user profile not found');
     return profile;
   }
-  
-  async getProfileUsers(params: { phones?: string[]; userIds?: number[]; }): Promise<ProfileUser[]> {
-    const { phones, userIds } = params;
-    let targetUserIds: number[] = userIds ?? [];
-    
-    if (phones && phones.length > 0) {
-      const users = await this.userRepository.find({ select: ['id'], where: { phone: In(phones) } });
-      targetUserIds = users.map((u) => u.id);
-    }
-
-    return await this.profileUserRepository.find({ where: { userId: In(targetUserIds) } });
-  }
 
   @Transactional()
   async updateProfileWinker(userId: number, dto: UpdateProfileWinkerDto): Promise<void> {
@@ -81,10 +69,14 @@ export class ProfileService {
   }
 
   async getProfileWinker(userId: number): Promise<ProfileWinker> {
-    const profile = await this.profileWinkerRepository.findOne({
-      where: { userId },
-      relations: ['images', 'registered']
-    });
+    const profile = await this.profileWinkerRepository
+      .createQueryBuilder('winker')
+      .leftJoinAndSelect('winker.images', 'images')
+      .leftJoinAndSelect('winker.registered', 'registered')
+      .where('winker.userId = :userId', { userId })
+      .orderBy('images.priority', 'ASC')
+      .addOrderBy('registered.priorityBio', 'DESC')
+      .getOne();
     if (!profile) throw new NotFoundException('winker profile not found');
     return profile;
   }
@@ -235,7 +227,6 @@ export class ProfileService {
   async getProfileWinkers(userId: number, maxDepth: number): Promise<WinkerInDepthsResponseDto[]> {
     // BFS 기반 지인 userId 목록 조회
     const depthUserIds = await this.getDepthUserIds(userId, maxDepth);
-    depthUserIds.push(userId); // depth=0: 내 register
     
     const registers = await this.profileWinkerRegisterRepository.find({
       where: { userId: In(depthUserIds) }, relations: ['profileWinker', 'profileWinker.images']
@@ -267,6 +258,7 @@ export class ProfileService {
         name: user.name,
         birthYear: user.birthYear,
         gender: user.gender,
+
         region1: winker.region1,
         region2: winker.region2,
         education: winker.education,
@@ -277,6 +269,7 @@ export class ProfileService {
         tattoo: winker.tattoo,
         religion: winker.religion,
         bio: winker.bio,
+
         images: winker.images
           .sort((a, b) => a.priority - b.priority)
           .map(img => img.url),
@@ -287,42 +280,41 @@ export class ProfileService {
             bio: r.bio,
           }))
       };
-  
+
       results.push(dto);
     }
-  
+    
     return results;
   }
-
+  
   private async getDepthUserIds(userId: number, maxDepth: number): Promise<number[]> {
     if (maxDepth < 1) return [];
-  
+
     const userIds = new Set<number>();
-    const node = new Set<number>(); // depth 탐색 후보
-    node.add(userId);
-  
+    const nodes = new Set<number>();   // 각 depth 단계별 탐색할 userId 목록
+
+    userIds.add(userId); // depth=0: 내 register
+    nodes.add(userId);   // BFS 시작점 (depth=0)
+
     for (let depth = 1; depth <= maxDepth; depth++) {
-      const currentIds = Array.from(node);
-      node.clear();
-  
+      const currentIds = Array.from(nodes);
+      nodes.clear();
+
       const relations = await this.relationRepository.find({
         where: [
-          { status: RequestStatus.ACCEPTED, userMinId: In(currentIds) },
-          { status: RequestStatus.ACCEPTED, userMaxId: In(currentIds) },
+          { userMinId: In(currentIds), status: RequestStatus.ACCEPTED },
+          { userMaxId: In(currentIds), status: RequestStatus.ACCEPTED },
         ],
       });
-  
+
       for (const r of relations) {
         const targetId = currentIds.includes(r.userMinId) ? r.userMaxId : r.userMinId;
-
-        if (targetId === userId) continue;   // 자기 자신 제외
         if (userIds.has(targetId)) continue; // 이미 depth에 포함된 userId 제외
-
         userIds.add(targetId);
-        node.add(targetId);
+        nodes.add(targetId);
       }
   
-      if (node.size === 0) break; // 더 확장 불가 → 종료
+      if (nodes.size === 0) break; // 더 확장 불가 → 종료
     }
   
     return Array.from(userIds);
