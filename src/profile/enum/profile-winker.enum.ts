@@ -38,3 +38,14 @@ export enum Tattoo {
   SMALL = 'SMALL',     // 작거나 잘 보이지 않는 문신
   VISIBLE = 'VISIBLE', // 노출되는 문신
 }
+
+export enum Religion {
+  NONE = 'NONE',                 // 무교
+  CHRISTIAN = 'CHRISTIAN',       // 기독교(개신교)
+  CATHOLIC = 'CATHOLIC',         // 천주교
+  BUDDHISM = 'BUDDHISM',         // 불교
+  WON_BUDDHISM = 'WON_BUDDHISM', // 원불교
+  ISLAM = 'ISLAM',               // 이슬람교
+  HINDUISM = 'HINDUISM',         // 힌두교
+  ETC = 'ETC',                   // 기타
+}

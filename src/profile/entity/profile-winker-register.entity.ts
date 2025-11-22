@@ -15,18 +15,11 @@ export class ProfileWinkerRegister {
   @Column({ name: 'user_id', type: 'int', comment: '등록 회원 ID' })
   userId: number;
 
-  @Exclude()
-  @Column({ name: 'visible_profile', type: 'boolean', default: true, comment: '프로필 노출 여부(등록자)' })
-  visibleProfile: boolean;
-
-  @Column({ name: 'bio', type: 'text', nullable: true, comment: '지인소개' })
+  @Column({ name: 'bio', type: 'text', nullable: true, comment: '평판' })
   bio: string | null;
 
-  @Column({ name: 'visible_bio', type: 'boolean', default: true, comment: '지인소개 노출 여부' })
-  visibleBio: boolean;
-
-  @Column({ name: 'priority_bio', type: 'smallint', default: 0, comment: '지인소개 정렬 순서' })
-  priorityBio: number;
+  @Column({ name: 'priority_bio', type: 'smallint', default: 0, comment: '정렬 순서' })
+  priority: number;
 
   @ManyToOne(
     () => ProfileWinker,

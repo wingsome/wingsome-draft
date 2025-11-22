@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Education, MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
+import { Education, MBTI, Religion, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { ProfileWinkerImage } from "./profile-winker-image.entity";
 import { ProfileWinkerRegister } from "./profile-winker-register.entity";
 
@@ -17,7 +17,7 @@ export class ProfileWinker {
   @Column({ name: 'region_2', type: 'varchar', length: 100, comment: '지역(구)' })
   region2: string;
 
-  @Column({ name: 'education', type: 'enum', enum: Education, enumName: 'user_education_enum', comment: '학력' })
+  @Column({ name: 'education', type: 'enum', enum: Education, enumName: 'winker_education_enum', comment: '학력' })
   education: Education;
 
   @Column({ name: 'job', type: 'varchar', length: 100, comment: '회사/직무' })
@@ -26,19 +26,22 @@ export class ProfileWinker {
   @Column({ name: 'tall', type: 'smallint', comment: '키' })
   tall: number;
 
-  @Column({ name: 'mbti', type: 'enum', enum: MBTI, enumName: 'user_mbti_enum', nullable: true, comment: 'MBTI' })
+  @Column({ name: 'mbti', type: 'enum', enum: MBTI, enumName: 'winker_mbti_enum', nullable: true, comment: 'MBTI' })
   mbti: MBTI | null;
 
-  @Column({ name: 'smoke', type: 'enum', enum: Smoke, enumName: 'user_smoke_enum', nullable: true, comment: '흡연 여부' })
+  @Column({ name: 'smoke', type: 'enum', enum: Smoke, enumName: 'winker_smoke_enum', nullable: true, comment: '흡연 여부' })
   smoke: Smoke | null;
 
-  @Column({ name: 'tattoo', type: 'enum', enum: Tattoo, enumName: 'user_tattoo_enum', nullable: true, comment: '문신 여부' })
+  @Column({ name: 'tattoo', type: 'enum', enum: Tattoo, enumName: 'winker_tattoo_enum', nullable: true, comment: '문신 여부' })
   tattoo: Tattoo | null;
+
+  @Column({ name: 'religion', type: 'enum', enum: Religion, enumName: 'winker_religion_enum', nullable: true, comment: '종교' })
+  religion: Religion | null;
 
   @Column({ name: 'bio', type: 'text', nullable: true, comment: '자기소개' })
   bio: string | null;
 
-  @Column({ name: 'visible', type: 'boolean', default: true, comment: '프로필 노출 여부(소유자)' })
+  @Column({ name: 'visible', type: 'boolean', default: true, comment: '프로필 노출 여부' })
   visible: boolean;
 
   @OneToMany(

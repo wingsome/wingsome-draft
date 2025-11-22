@@ -110,34 +110,10 @@ export class ProfileController {
     return this.profileService.updateProfileWinkerVisible(request.user.sub, visible);
   }
 
-  @Patch('winker/:registerId/bio/visible')
-  @ApiOperation({
-    summary: '내 윙커 프로필 지인소개 노출 여부 수정',
-    description: '회원 윙커 프로필을 등록한 지인의 소개를 노출/미노출합니다.'
-  })
-  @ApiParam({ name: 'registerId', type: Number, description: '프로필 등록 ID',  required: true })
-  @ApiBody({ schema: {
-    properties: {
-      visible: { type: 'boolean', description: '노출(true)/미노출(false) 여부', nullable: false }
-    },
-    required: ['visible']
-  } })
-  @ApiResponse({ status: 200, description: '수정 성공' })
-  @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
-  @ApiResponse({ status: 403, description: '권한 없는 등록 관계' })
-  @ApiResponse({ status: 404, description: '존재하지 않는 프로필 또는 등록 관계' })
-  async updateProfileWinkerBioVisible(
-    @Request() request,
-    @Param('registerId', ParseIntPipe) registerId: number,
-    @Body('visible', new BooleanFieldPipe('visible')) visible: boolean
-  ) {
-    return this.profileService.updateProfileWinkerBioVisible(request.user.sub, registerId, visible);
-  }
-
   @Patch('winker/bios/priority')
   @ApiOperation({
-    summary: '내 윙커 프로필 지인소개 정렬 순서 재지정',
-    description: '회원 윙커 프로필을 등록한 지인의 소개 정렬 순서를 드래그 앤 드랍으로 재지정합니다.'
+    summary: '내 윙커 프로필 등록 지인 정렬 순서 재지정',
+    description: '회원 윙커 프로필을 등록한 지인의 정렬 순서를 드래그 앤 드랍으로 재지정합니다.'
   })
   @ApiBody({
     type: () => UpdatePriorityBioDto, isArray: true,
@@ -147,11 +123,11 @@ export class ProfileController {
   @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
   @ApiResponse({ status: 403, description: '권한 없는 등록 관계' })
   @ApiResponse({ status: 404, description: '존재하지 않는 프로필 또는 등록 관계' })
-  async updateProfileWinkerReputationsPriority(
+  async updateProfileWinkerRegistersPriority(
     @Request() request,
     @Body() dto: UpdatePriorityBioDto[]
   ) {
-    return this.profileService.updateProfileWinkerReputationsPriority(request.user.sub, dto);
+    return this.profileService.updateProfileWinkerRegistersPriority(request.user.sub, dto);
   }
   
   @Post('register/:targetUserId')
@@ -184,39 +160,15 @@ export class ProfileController {
     return this.profileService.getProfileWinkersRegistered(request.user.sub);
   }
 
-  @Patch('register/:registerId/visible')
-  @ApiOperation({
-    summary: '등록한 지인 윙커 프로필 노출 여부 수정',
-    description: '회원이 등록한 지인 윙커 프로필을 노출/미노출합니다.'
-  })
-  @ApiParam({ name: 'registerId', type: Number, description: '프로필 등록 ID',  required: true })
-  @ApiBody({ schema: {
-    properties: {
-      visible: { type: 'boolean', description: '노출(true)/미노출(false) 여부', nullable: false }
-    },
-    required: ['visible']
-  } })
-  @ApiResponse({ status: 200, description: '수정 성공' })
-  @ApiResponse({ status: 400, description: '필수 값 누락 또는 유효성 오류' })
-  @ApiResponse({ status: 403, description: '권한 없는 등록 관계' })
-  @ApiResponse({ status: 404, description: '존재하지 않는 등록 관계' })
-  async updateProfileWinkerRegisteredVisible(
-    @Request() request,
-    @Param('registerId', ParseIntPipe) registerId: number,
-    @Body('visible', new BooleanFieldPipe('visible')) visible: boolean
-  ) {
-    return this.profileService.updateProfileWinkerRegisteredVisible(request.user.sub, registerId, visible);
-  }
-
   @Put('register/:registerId/bio')
   @ApiOperation({
-    summary: '등록한 지인 윙커 소개 생성/수정',
-    description: '회원이 등록한 지인 윙커 프로필의 소개를 생성 및 수정합니다.'
+    summary: '등록한 지인 윙커 평판 생성/수정',
+    description: '회원이 등록한 지인 윙커의 평판을 생성 및 수정합니다.'
   })
   @ApiParam({ name: 'registerId', type: Number, description: '프로필 등록 ID',  required: true })
   @ApiBody({ schema: {
     properties: {
-      bio: { type: 'string', description: '지인소개', nullable: false }
+      bio: { type: 'string', description: '평판', nullable: false }
     },
     required: ['bio']
   } })
@@ -235,8 +187,8 @@ export class ProfileController {
 
   @Delete(':registerId/bio')
   @ApiOperation({
-    summary: '지인소개 삭제',
-    description: '내 윙커 프로필의 지인소개 혹은 내가 작성한 지인소개를 삭제합니다.'
+    summary: '평판 삭제',
+    description: '내 윙커 프로필의 평판 혹은 내가 작성한 평판을 삭제합니다.'
   })
   @ApiParam({ name: 'registerId', type: Number, description: '프로필 등록 ID',  required: true })
   @ApiResponse({ status: 200, description: '삭제 성공' })

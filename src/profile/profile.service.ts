@@ -13,7 +13,7 @@ import { Relation } from 'src/relation/entity/relation.entity';
 import { RequestStatus } from 'src/common/enum/request-status.enum';
 import { WinkerRegisteredResponseDto } from './dto/winker-registered-response';
 import { UpdatePriorityBioDto } from './dto/update-priority-bio.dto';
-import { Register, WinkerInDepthsResponseDto } from './dto/winker-in-depths-response';
+import { WinkerInDepthsResponseDto } from './dto/winker-in-depths-response';
 
 @Injectable()
 export class ProfileService {
@@ -96,21 +96,8 @@ export class ProfileService {
     await this.profileWinkerRepository.save(profile);
   }
   
-  async updateProfileWinkerBioVisible(userId: number, registerId: number, visible: boolean): Promise<void> {
-    const profile = await this.profileWinkerRepository.findOne({ select: ['id'], where: { userId} });
-    if (!profile) throw new NotFoundException('winker profile not found');
-
-    const register = await this.profileWinkerRegisterRepository.findOne({ where: { id: registerId } });
-    if (!register) throw new NotFoundException('register not found');
-
-    if (profile.id !== register.profileWinkerId) throw new ForbiddenException('do not have permission');
-
-    register.visibleBio = visible;
-    await this.profileWinkerRegisterRepository.save(register);
-  }
-  
   @Transactional()
-  async updateProfileWinkerReputationsPriority(userId: number, dto: UpdatePriorityBioDto[]): Promise<void> {
+  async updateProfileWinkerRegistersPriority(userId: number, dto: UpdatePriorityBioDto[]): Promise<void> {
     const profile = await this.profileWinkerRepository.findOne({ select: ['id'], where: { userId} });
     if (!profile) throw new NotFoundException('winker profile not found');
   
@@ -125,7 +112,7 @@ export class ProfileService {
     }
   
     for (const item of dto) {
-      await this.profileWinkerRegisterRepository.update({ id: item.registerId }, { priorityBio: item.priority });
+      await this.profileWinkerRegisterRepository.update({ id: item.registerId }, { priority: item.priority });
     }
   }
 
@@ -181,27 +168,17 @@ export class ProfileService {
         mbti: p.mbti,
         smoke: p.smoke,
         tattoo: p.tattoo,
+        religion: p.religion,
         bioByWinker: p.bio,
-        bioByUser: r.bio,
-        visibleByWinker: p.visible,
-        visibleByUser: r.visibleProfile,
-        images: p.images.map((img) => ({
-          url: img.url,
-          priority: img.priority
-        }))
+        bioByRegister: r.bio,
+        visible: p.visible,
+        images: p.images
+          .sort((a, b) => a.priority - b.priority)
+          .map(img => img.url)
       });
     }
     
     return results;
-  }
-  
-  async updateProfileWinkerRegisteredVisible(userId: number, registerId: number, visible: boolean): Promise<void> {
-    const register = await this.profileWinkerRegisterRepository.findOne({ where: { id: registerId } });
-    if (!register) throw new NotFoundException('register not found');
-    if (userId !== register.userId) throw new ForbiddenException('do not have permission');
-
-    register.visibleProfile = visible;
-    await this.profileWinkerRegisterRepository.save(register);
   }
   
   async updateProfileWinkerRegisteredBio(userId: number, registerId: number, bio: string): Promise<void> {
@@ -256,91 +233,37 @@ export class ProfileService {
   }
 
   async getProfileWinkers(userId: number, maxDepth: number): Promise<WinkerInDepthsResponseDto[]> {
-    /**
-     * 1) depth 기반으로 지인 userId 목록 조회
-     */
+    // BFS 기반 지인 userId 목록 조회
     const depthUserIds = await this.getDepthUserIds(userId, maxDepth);
-    depthUserIds.push(userId);
-  
-    /**
-     * 2) 이 지인들이 등록한 모든 윙커 프로필 조회
-     */
+    depthUserIds.push(userId); // depth=0: 내 register
+    
     const registers = await this.profileWinkerRegisterRepository.find({
-      where: {
-        userId: In(depthUserIds),
-        visibleProfile: true,
-        visibleBio: true,
-      },
-      relations: ['profileWinker', 'profileWinker.images'],
-      order: { priorityBio: 'ASC' }
+      where: { userId: In(depthUserIds) }, relations: ['profileWinker', 'profileWinker.images']
     });
-  
     if (registers.length === 0) return [];
-  
-    /**
-     * 3) 윙커의 userId만 추출 후 실제 사용자 정보(ProfileUser) 조회
-     */
+    
     const winkerUserIds = registers.map(r => r.profileWinker.userId);
-    const profileUsers = await this.profileUserRepository.find({
-      where: { userId: In(winkerUserIds) }
-    });
-  
-    const userMap = new Map(profileUsers.map(u => [u.userId, u]));
-  
-    /**
-     * 4) depth 계산을 위해 역으로 depth lookup 구성
-     */
-    const depthLookup = new Map<number, number>();
-    depthLookup.set(userId, 0);
-    for (const id of depthUserIds) {
-      depthLookup.set(id, await this.getUserDepth(userId, id, maxDepth));
-    }
-  
-    /**
-     * 5) 윙커 기준 그룹핑 (하나의 윙커에 여러 register 가능)
-     */
-    const winkerMap = new Map<number, {
-      depth: number;
-      winker: ProfileWinker;
-      registers: Register[];
-      user: any;
-    }>();
-  
-    for (const r of registers) {
-      const winker = r.profileWinker;
-      const u = userMap.get(winker.userId);
-      if (!winker || !u) continue;
-  
-      const depth = depthLookup.get(r.userId) ?? maxDepth;
-  
-      if (!winkerMap.has(winker.userId)) {
-        winkerMap.set(winker.userId, {
-          depth,
-          winker,
-          user: u,
-          registers: []
-        });
-      }
+    const users = await this.profileUserRepository.find({ where: { userId: In(winkerUserIds) } });
+    const userMap = new Map(users.map(u => [u.userId, u]));
+    const winkerMap = new Map<number, { user: ProfileUser; winker: ProfileWinker; registers: any[]; }>();
 
-      // non-null 보장된 상태에서 get()
-      const entry = winkerMap.get(winker.userId)!;
+    for (const r of registers) {
+      const p = r.profileWinker;
+      const u = userMap.get(p.userId);
+      if (!p || !u) continue;
   
-      entry.registers.push({
-        userId: r.userId,
-        bio: r.bio,
-        priority: r.priorityBio,
-      });
+      // winkerMap 에 아직 해당 userId가 없다면 새로 생성
+      if (!winkerMap.has(p.userId)) winkerMap.set(p.userId, { winker: p, user: u, registers: [] });
+      // 이미 있다면 기존 entry에 register만 추가
+      const entry = winkerMap.get(p.userId)!;
+      entry.registers.push({ userId: r.userId, bio: r.bio, priority: r.priority });
     }
-  
-    /**
-     * 6) DTO로 변환
-     */
+    
     const results: WinkerInDepthsResponseDto[] = [];
   
-    for (const { depth, winker, user, registers } of winkerMap.values()) {
+    for (const { winker, user, registers } of winkerMap.values()) {
       const dto: WinkerInDepthsResponseDto = {
-        depth,
-        userId: winker.userId,
+        userId: user.id,
         name: user.name,
         birthYear: user.birthYear,
         gender: user.gender,
@@ -352,14 +275,17 @@ export class ProfileService {
         mbti: winker.mbti,
         smoke: winker.smoke,
         tattoo: winker.tattoo,
+        religion: winker.religion,
         bio: winker.bio,
         images: winker.images
           .sort((a, b) => a.priority - b.priority)
-          .map(img => ({
-            url: img.url,
-            priority: img.priority
-          })),
-        registers
+          .map(img => img.url),
+        registers: registers
+          .sort((a, b) => a.priority - b.priority)
+          .map((r) => ({
+            userId: r.userId,
+            bio: r.bio,
+          }))
       };
   
       results.push(dto);
@@ -371,16 +297,14 @@ export class ProfileService {
   private async getDepthUserIds(userId: number, maxDepth: number): Promise<number[]> {
     if (maxDepth < 1) return [];
   
-    const visited = new Set<number>(); // 이미 depth에 포함된 회원
-    const queue = new Set<number>();   // 현재 depth의 frontier
-  
-    queue.add(userId);
+    const userIds = new Set<number>();
+    const node = new Set<number>(); // depth 탐색 후보
+    node.add(userId);
   
     for (let depth = 1; depth <= maxDepth; depth++) {
-      const currentIds = Array.from(queue); // 이전 depth의 userIds
-      queue.clear();
+      const currentIds = Array.from(node);
+      node.clear();
   
-      // 이전 depth 회원들과 ACCEPTED 관계를 가진 모든 userIds 조회
       const relations = await this.relationRepository.find({
         where: [
           { status: RequestStatus.ACCEPTED, userMinId: In(currentIds) },
@@ -389,56 +313,18 @@ export class ProfileService {
       });
   
       for (const r of relations) {
-        const nextId =
-          currentIds.includes(r.userMinId) ? r.userMaxId : r.userMinId;
-  
-        // 조건
-        if (nextId === userId) continue;       // 자기 자신 제외
-        if (visited.has(nextId)) continue;     // 이미 depth에 포함된 userId 제외
-  
-        visited.add(nextId);
-        queue.add(nextId); // 다음 depth 탐색 후보
+        const targetId = currentIds.includes(r.userMinId) ? r.userMaxId : r.userMinId;
+
+        if (targetId === userId) continue;   // 자기 자신 제외
+        if (userIds.has(targetId)) continue; // 이미 depth에 포함된 userId 제외
+
+        userIds.add(targetId);
+        node.add(targetId);
       }
   
-      if (queue.size === 0) break; // 더 확장 불가 → 종료
+      if (node.size === 0) break; // 더 확장 불가 → 종료
     }
   
-    return Array.from(visited);
-  }
-
-  private async getUserDepth(originUserId: number, targetUserId: number, maxDepth: number): Promise<number> {
-    let currentIds = [originUserId];
-    const visited = new Set<number>();
-  
-    for (let depth = 1; depth <= maxDepth; depth++) {
-      const relations = await this.relationRepository.find({
-        where: [
-          { status: RequestStatus.ACCEPTED, userMinId: In(currentIds) },
-          { status: RequestStatus.ACCEPTED, userMaxId: In(currentIds) }
-        ]
-      });
-  
-      const nextLevel = new Set<number>();
-  
-      for (const r of relations) {
-        const candidate =
-          currentIds.includes(r.userMinId) ? r.userMaxId : r.userMinId;
-        if (!visited.has(candidate)) {
-          nextLevel.add(candidate);
-        }
-      }
-  
-      if (nextLevel.has(targetUserId)) return depth;
-
-      // nextLevel → visited 로 안전하게 추가
-      for (const n of nextLevel) visited.add(n);
-  
-      currentIds = Array.from(nextLevel);
-  
-      // 더 확장할 것이 없으면 종료
-      if (currentIds.length === 0) break;
-    }
-  
-    return maxDepth;
+    return Array.from(userIds);
   }
 }

@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min, ValidateNested } from "class-validator";
-import { Education, MBTI, Smoke, Tattoo } from "../enum/profile-winker.enum";
+import { Education, MBTI, Religion, Smoke, Tattoo } from "../enum/profile-winker.enum";
 import { Type } from "class-transformer";
 
 export class UpdateProfileWinkerDto {
@@ -51,6 +51,12 @@ export class UpdateProfileWinkerDto {
   @IsNotEmpty()
   @IsEnum(Tattoo)
   tattoo?: Tattoo;
+
+  @ApiProperty({ enum: Religion, description: '종교', required: false, nullable: false })
+  @IsOptional()
+  @IsNotEmpty()
+  @IsEnum(Religion)
+  religion?: Religion;
 
   @ApiProperty({ description: '자기소개', required: false, nullable: false })
   @IsOptional()
