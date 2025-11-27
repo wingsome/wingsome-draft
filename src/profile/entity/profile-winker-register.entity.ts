@@ -1,6 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { ProfileWinker } from "./profile-winker.entity";
-import { Exclude } from "class-transformer";
 
 @Entity('profile_winker_register', { comment: '윙커 프로필 등록 목록' })
 @Unique('uq_winker_register', ['profileWinkerId', 'userId'])
@@ -8,7 +7,6 @@ export class ProfileWinkerRegister {
   @PrimaryGeneratedColumn({ comment: '프로필 등록 ID' })
   id: number;
 
-  @Exclude()
   @Column({ name: 'profile_winker_id', type: 'int', comment: '윙커 프로필 ID(FK)' })
   profileWinkerId: number;
 

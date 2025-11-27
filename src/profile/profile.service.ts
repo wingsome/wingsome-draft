@@ -223,14 +223,34 @@ export class ProfileService {
     if (profileA) await this.profileWinkerRegisterRepository.delete({ profileWinkerId: profileA.id, userId: userB });
     if (profileB) await this.profileWinkerRegisterRepository.delete({ profileWinkerId: profileB.id, userId: userA });
   }
+  
+  async getProfileUsers(params: { phones?: string[]; userIds?: number[]; }): Promise<ProfileUser[]> {
+    const { phones, userIds } = params;
+    let targetUserIds: number[] = userIds ?? [];
+    
+    if (phones && phones.length > 0) {
+      const users = await this.userRepository.find({ select: ['id'], where: { phone: In(phones) } });
+      targetUserIds = users.map((u) => u.id);
+    }
+
+    return await this.profileUserRepository.find({ where: { userId: In(targetUserIds) } });
+  }
 
   async getProfileWinkers(userId: number, maxDepth: number): Promise<WinkerInDepthsResponseDto[]> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('user not found');
+    if (maxDepth > user.maxDepth) throw new BadRequestException(`user’s permitted maxDepth is (${user.maxDepth})`);
+    
     // BFS 기반 지인 userId 목록 조회
     const depthUserIds = await this.getDepthUserIds(userId, maxDepth);
     
-    const registers = await this.profileWinkerRegisterRepository.find({
-      where: { userId: In(depthUserIds) }, relations: ['profileWinker', 'profileWinker.images']
-    });
+    const registers = await this.profileWinkerRegisterRepository
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.profileWinker', 'pw')
+      .leftJoinAndSelect('pw.images', 'img')
+      .where('r.userId IN (:...depthUserIds)', { depthUserIds })
+      .andWhere('pw.visible = :visible', { visible: true })
+      .getMany();
     if (registers.length === 0) return [];
     
     const winkerUserIds = registers.map(r => r.profileWinker.userId);
@@ -293,8 +313,9 @@ export class ProfileService {
     const userIds = new Set<number>();
     const nodes = new Set<number>();   // 각 depth 단계별 탐색할 userId 목록
 
-    userIds.add(userId); // depth=0: 내 register
-    nodes.add(userId);   // BFS 시작점 (depth=0)
+    // BFS 시작점 (depth=0): 내 register
+    userIds.add(userId);
+    nodes.add(userId);
 
     for (let depth = 1; depth <= maxDepth; depth++) {
       const currentIds = Array.from(nodes);

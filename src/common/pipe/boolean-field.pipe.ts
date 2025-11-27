@@ -8,7 +8,7 @@ export class BooleanFieldPipe implements PipeTransform {
   ) {}
 
   transform(value: any) {
-    if (value === undefined || value === null) {
+    if (value === undefined || value === null || value === '') {
       if (!this.required) return undefined;
       else throw new BadRequestException(`${this.fieldName} should not be empty`);
     }

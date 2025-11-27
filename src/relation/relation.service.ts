@@ -8,31 +8,40 @@ import { RelationResponseDto } from './dto/relation-response.dto';
 import { RequestStatus } from 'src/common/enum/request-status.enum';
 import { ProfileService } from 'src/profile/profile.service';
 import { Transactional } from 'typeorm-transactional';
+import { BlockType } from './enum/block-type.enum';
+import { Block } from './entity/block.entity';
 
 @Injectable()
 export class RelationService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Relation) private readonly relationRepository: Repository<Relation>,
+    @InjectRepository(Block) private readonly blockRepository: Repository<Block>,
     private readonly profileService: ProfileService
   ) {}
 
-  async createRelation(requestUserId: number, targetUserId: number, relationType: RelationType): Promise<void> {
+  async updateRelation(requestUserId: number, targetUserId: number, relationType: RelationType): Promise<void> {
     if (requestUserId === targetUserId) throw new BadRequestException('target user should not be self');
 
     const user = await this.userRepository.findOne({ where: { id: targetUserId } });
     if (!user) throw new NotFoundException('target user not found');
 
+    const block = await this.blockRepository.findOne({
+      where: [
+        { userId: requestUserId, targetId: targetUserId },
+        { userId: targetUserId, targetId: requestUserId }
+      ]
+    });
+    if (block && block.blockType === BlockType.RELATION) throw new ForbiddenException('do not have permission');
+
     const userMinId = Math.min(requestUserId, targetUserId);
     const userMaxId = Math.max(requestUserId, targetUserId);
 
-    const relationship = this.relationRepository.create({ userId: requestUserId, userMinId, userMaxId, relationType });
-    try {
-      await this.relationRepository.save(relationship);
-    } catch (e) {
-      if (e.code === '23505') throw new ConflictException('this relationship already exists');
-      throw e;
-    }
+    let relation = await this.relationRepository.findOne({ where: { userMinId, userMaxId } });
+    if (!relation) relation = this.relationRepository.create({ userId: requestUserId, userMinId, userMaxId, relationType });
+    else if (relation.relationType !== relationType) relation.relationType = relationType;
+    else return;
+    await this.relationRepository.save(relation);
   }
   
   async getRelations(userId: number): Promise<RelationResponseDto> {
@@ -60,17 +69,6 @@ export class RelationService {
     return response;
   }
 
-  async updateRelationType(userId: number, relationId: number, relationType: RelationType): Promise<void> {
-    const relation = await this.relationRepository.findOne({ where: { id: relationId } });
-    if (!relation) throw new NotFoundException('relation not found');
-    if (relation.userMinId !== userId && relation.userMaxId !== userId) {
-      throw new ForbiddenException('do not have permission');
-    }
-    relation.relationType = relationType;
-    await this.relationRepository.save(relation);
-  }
-
-  @Transactional()
   async updateeRelationStatus(userId: number, relationId: number): Promise<void> {
     const relation = await this.relationRepository.findOne({ where: { id: relationId } });
     if (!relation) throw new NotFoundException('relation not found');
@@ -90,5 +88,42 @@ export class RelationService {
     }
     await this.profileService.deleteProfileWinkerRegistersByDeleteRelation(userId, relationId);
     await this.relationRepository.remove(relation);
+  }
+
+  @Transactional()
+  async updateBlock(requestUserId: number, targetUserId: number, blockType: BlockType): Promise<void> {
+    if (requestUserId === targetUserId) throw new BadRequestException('target user should not be self');
+
+    const user = await this.userRepository.findOne({ where: { id: targetUserId } });
+    if (!user) throw new NotFoundException('target user not found');
+
+    let block = await this.blockRepository.findOne({ where: { userId: requestUserId, targetId: targetUserId } });
+    if (!block) block = this.blockRepository.create({ userId: requestUserId, targetId: targetUserId, blockType });
+    else if (block.blockType !== blockType) block.blockType = blockType;
+    else return;
+    await this.blockRepository.save(block);
+
+    if (blockType === BlockType.RELATION) {
+      const userMinId = Math.min(requestUserId, targetUserId);
+      const userMaxId = Math.max(requestUserId, targetUserId);
+      
+      const relation = await this.relationRepository.findOne({ where: { userMinId, userMaxId } });
+      
+      if (relation) {
+        await this.profileService.deleteProfileWinkerRegistersByDeleteRelation(requestUserId, relation.id);
+        await this.relationRepository.remove(relation);
+      }
+    }
+  }
+  
+  async getBlocks(userId: number): Promise<Block[]> {
+    return await this.blockRepository.find({ where: { userId } });
+  }
+  
+  async deleteBlock(userId: number, blockId: number): Promise<void> {
+    const block = await this.blockRepository.findOne({ where: { id: blockId } });
+    if (!block) throw new NotFoundException('block not found');
+    if (block.userId !== userId) throw new ForbiddenException('do not have permission');
+    await this.blockRepository.remove(block);
   }
 }

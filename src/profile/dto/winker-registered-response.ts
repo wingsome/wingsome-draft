@@ -45,7 +45,7 @@ export class WinkerRegisteredResponseDto {
   @ApiProperty({ description: '자기소개', required: false })
   bioByWinker?: string | null;
 
-  @ApiProperty({ description: '평판', required: false })
+  @ApiProperty({ description: '내가 작성한 평판', required: false })
   bioByRegister?: string | null;
 
   @ApiProperty({ description: '프로필 노출 여부)' })

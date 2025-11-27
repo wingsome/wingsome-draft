@@ -21,6 +21,9 @@ export class User {
   @Column({ name: 'role', type: 'smallint', enum: Role, default: Role.user, comment: '권한' })
   role: Role;
 
+  @Column({ name: 'max_depth', type: 'int', default: 2, comment: '지인 연결 최대값' })
+  maxDepth: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: '생성 시각' })
   createdAt: Date;
 

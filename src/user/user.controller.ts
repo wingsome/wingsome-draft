@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Get, Patch, Post, Request, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiDomain, HttpMethod } from 'src/common/enum/hateoas.enum';
 import { HateoasHelper, LinkMap } from 'src/common/hateoas/hateoas.helper';
@@ -50,6 +50,19 @@ export class UserController {
     ]);
 
     return { accessToken, refreshToken, _links: links };
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: '내 계정 정보 조회',
+    description: '회원의 계정 정보를 조회합니다.'
+  })
+  @ApiResponse({ status: 200, description: '조회 성공' })
+  @ApiResponse({ status: 404, description: '존재하지 않는 계정' })
+  async getUser(
+    @Request() request
+  ) {
+    return this.userService.getUser(request.user.sub);
   }
 
   @Public()

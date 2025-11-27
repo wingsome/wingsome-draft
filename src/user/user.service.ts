@@ -57,6 +57,12 @@ export class UserService {
     }
     return await this.authService.issueTokenPair(user)
   }
+  
+  async getUser(id: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('user not found');
+    return user;
+  }
 
   async updatePassword(country: string, phone: string, newPassword: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { country, phone } });
